@@ -44,3 +44,5 @@ flutter run --dart-define=MML_LICENSE_PUBLIC_KEY=BASE64URL_RAW_ED25519_KEY --dar
 The source attendance app is not a dependency and is not modified. This public package contains no biometric model weights. Commercial activation and a private model pack are required for inference.
 
 Support: [hamzaasif19974@gmail.com](mailto:hamzaasif19974@gmail.com)
+
+Website: [mobilemllabs.com](https://mobilemllabs.com/) · [Source and issues](https://github.com/hamza372/mml_face_sdk)
