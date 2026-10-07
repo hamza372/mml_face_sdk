@@ -1,0 +1,9 @@
+name = "everif-face-license"
+main = "src/index.ts"
+compatibility_date = "2025-01-24"
+
+[[d1_databases]]
+binding = "LICENSE_DB"
+database_name = "everif-face-license"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
