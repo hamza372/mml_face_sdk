@@ -9,4 +9,6 @@
 7. Insert customer app keys by SHA-256 hash only: `INSERT INTO activation_codes(code_hash) VALUES ('...');`. A key binds permanently to the first app identifier that activates it and can be reused by installations of that app.
 8. Run `npm run dev` or `npm run deploy`.
 
+Production public licence key (base64url): `vJZyhTYJIS4JWop8tIlY1Juyzpyv434M_BUQhgHzgDY`. Embed this public key in the distributed SDK/app; the corresponding private key exists only in Cloudflare Worker secret storage.
+
 `POST /v1/activate` accepts only `activationCode`, `appId`, `deviceId`, and `platform`. It returns a lifetime, device-bound Ed25519 licence and a 15-minute, one-use model grant. The same customer key can activate multiple devices only when the app identifier matches its permanent binding. `GET /v1/model-pack/{grant}` reads the private R2 object and encrypts it with a unique AES-256-GCM key returned only in the activation response. The SDK verifies and installs it, then operates offline. Issued lifetime licences cannot be remotely revoked. Never add biometric fields or request logging containing secrets. Add Cloudflare rate limits/WAF before production.
