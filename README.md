@@ -38,7 +38,7 @@ flutter pub get
 flutter analyze
 flutter test
 cd example
-flutter run --dart-define=MML_LICENSE_PUBLIC_KEY=BASE64URL_RAW_ED25519_KEY --dart-define=MML_ACTIVATION_URL=http://127.0.0.1:8787/v1/activate
+flutter run --dart-define=MML_LICENSE_PUBLIC_KEY=vJZyhTYJIS4JWop8tIlY1Juyzpyv434M_BUQhgHzgDY --dart-define=MML_ACTIVATION_URL=https://mml-face-license.hamzaasif19974-69b.workers.dev/v1/activate
 ```
 
 The source attendance app is not a dependency and is not modified. This public package contains no biometric model weights. Commercial activation and a private model pack are required for inference.

@@ -1,6 +1,8 @@
 name = "mml-face-license"
 main = "src/index.ts"
 compatibility_date = "2025-01-24"
+workers_dev = true
+preview_urls = false
 
 [vars]
 MODEL_PACK_OBJECT = "model-pack-v1.zip"
