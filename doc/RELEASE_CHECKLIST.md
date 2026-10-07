@@ -10,5 +10,6 @@
 - [ ] External security review of native parsing, licence validation, Worker/D1, CI, and supply chain.
 - [ ] Pin dependencies, generate SBOM, scan, and verify model checksums in CI.
 - [ ] Provision production Ed25519 key in Workers secret storage/HSM process; test rotation.
+- [ ] Keep R2 private, upload the reviewed model pack, set its exact SHA-256, and test one-use grant expiry/replay rejection.
 - [ ] Rate-limit/WAF activation and monitor only non-biometric metadata.
 - [ ] Sign release artifacts, archive build evidence, changelog, and rollback package.

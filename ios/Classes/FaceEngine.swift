@@ -3,7 +3,7 @@ import UIKit
 import Vision
 import TensorFlowLite
 
-enum FaceEngineError: String, Error { case invalidImage, noFace, multipleFaces, faceTooSmall, faceNotFrontal, landmarksMissing, templateIncompatible, internalError = "internal" }
+enum FaceEngineError: String, Error { case invalidImage, noFace, multipleFaces, faceTooSmall, faceNotFrontal, landmarksMissing, templateIncompatible, modelUnavailable, internalError = "internal" }
 
 final class FaceEngine {
   private var arc: Interpreter
@@ -14,9 +14,9 @@ final class FaceEngine {
   private var lowStarted: TimeInterval = 0
   private var spoofLatched = false
 
-  init(assetPath: (String) -> String) throws {
+  init(modelPaths: [String: String]) throws {
     func model(_ name: String) throws -> Interpreter {
-      guard let path = Bundle.main.path(forResource: assetPath("assets/models/\(name)"), ofType: nil) else { throw FaceEngineError.internalError }
+      guard let path = modelPaths[name] else { throw FaceEngineError.modelUnavailable }
       var options = Interpreter.Options(); options.threadCount = 2
       var interpreter = try Interpreter(modelPath: path, options: options); try interpreter.allocateTensors(); return interpreter
     }

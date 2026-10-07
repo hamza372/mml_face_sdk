@@ -1,6 +1,5 @@
 package com.everif.everif_face_sdk
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -10,17 +9,17 @@ import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceLandmark
-import io.flutter.FlutterInjector
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.io.File
 import kotlin.math.*
 
-internal class FaceEngine(private val context: Context) : AutoCloseable {
+internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     private val detector = FaceDetection.getClient(FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE).setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL).build())
-    private val arc = load("assets/models/mobileFaceNetARCNET.tflite")
-    private val fas27 = load("assets/models/minifas_v2_2.7_80.tflite")
-    private val fas40 = load("assets/models/minifas_v1se_4.0_80.tflite")
+    private val arc = load(models.getValue("mobileFaceNetARCNET.tflite"))
+    private val fas27 = load(models.getValue("minifas_v2_2.7_80.tflite"))
+    private val fas40 = load(models.getValue("minifas_v1se_4.0_80.tflite"))
     private val scores = ArrayDeque<Double>()
     private var lowRun = 0
     private var lowStarted = 0L
@@ -104,8 +103,8 @@ internal class FaceEngine(private val context: Context) : AutoCloseable {
     }
     private fun embedding(image: Bitmap): FloatArray { try { val pix=IntArray(12544);image.getPixels(pix,0,112,0,0,112,112);val input=ByteBuffer.allocateDirect(12544*12).order(ByteOrder.nativeOrder());pix.forEach{input.putFloat((Color.blue(it)-127.5f)/128f);input.putFloat((Color.green(it)-127.5f)/128f);input.putFloat((Color.red(it)-127.5f)/128f)};input.rewind();val n=arc.getOutputTensor(0).shape().last();val out=arrayOf(FloatArray(n));arc.run(input,out);val norm=sqrt(out[0].sumOf{it*it.toDouble()});require(norm>0&&norm.isFinite()){ "internal"};return FloatArray(n){(out[0][it]/norm).toFloat()} } finally { image.recycle() } }
     private fun cosine(a:FloatArray,b:List<Double>):Double{var d=0.0;var x=0.0;var y=0.0;for(i in a.indices){d+=a[i]*b[i];x+=a[i]*a[i];y+=b[i]*b[i]};return d/sqrt(x*y)}
-    private fun load(asset:String):Interpreter{val key=FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(asset,"everif_face_sdk");val data=context.assets.open(key).use{it.readBytes()};val buffer=ByteBuffer.allocateDirect(data.size).order(ByteOrder.nativeOrder());buffer.put(data).rewind();return Interpreter(buffer,Interpreter.Options().setNumThreads(2))}
+    private fun load(file:File):Interpreter = Interpreter(file, Interpreter.Options().setNumThreads(2))
     fun reset(){scores.clear();lowRun=0;lowStarted=0;spoofLatched=false}
     override fun close(){reset();detector.close();arc.close();fas27.close();fas40.close()}
-    companion object { fun publicError(error:Throwable):String { val text=generateSequence(error){it.cause}.joinToString(" "){it.message.orEmpty()};return listOf("invalidImage","noFace","multipleFaces","faceTooSmall","faceNotFrontal","landmarksMissing","templateIncompatible").firstOrNull{text.contains(it)}?:"internal" } }
+    companion object { fun publicError(error:Throwable):String { val text=generateSequence(error){it.cause}.joinToString(" "){it.message.orEmpty()};return listOf("invalidImage","noFace","multipleFaces","faceTooSmall","faceNotFrontal","landmarksMissing","templateIncompatible","modelUnavailable").firstOrNull{text.contains(it)}?:"internal" } }
 }

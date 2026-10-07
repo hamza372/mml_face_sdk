@@ -10,6 +10,7 @@ enum FaceSdkError {
   livenessPending,
   templateIncompatible,
   licenseInvalid,
+  modelUnavailable,
   busy,
   internal,
 }

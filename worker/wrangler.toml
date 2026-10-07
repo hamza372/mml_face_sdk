@@ -2,6 +2,15 @@ name = "everif-face-license"
 main = "src/index.ts"
 compatibility_date = "2025-01-24"
 
+[vars]
+MODEL_PACK_OBJECT = "model-pack-v1.zip"
+MODEL_PACK_VERSION = "1"
+MODEL_PACK_SHA256 = "d2387b95b294fcbb0035be383a6a301065c8211c8ece9bcc7ecbd780f3be3e50"
+
+[[r2_buckets]]
+binding = "MODEL_BUCKET"
+bucket_name = "everif-face-models"
+
 [[d1_databases]]
 binding = "LICENSE_DB"
 database_name = "everif-face-license"

@@ -6,7 +6,7 @@ Assets are biometric images, templates, model files, activation codes, licences,
 - Licence forgery/tampering: Ed25519 signature, bounded validity, exact app/device binding. Runtime patching on compromised devices remains possible.
 - Replay/presentation: two-model passive PAD, temporal median, spoof latch, framing and pose gates. This does not prove freshness against all replays or masks.
 - Template theft: host must envelope-encrypt templates with Keystore/Keychain-protected keys. Embeddings are sensitive biometric data.
-- Model replacement: verify recorded release checksums; protect CI and signed artifacts.
+- Model delivery/replacement: R2 is private; each activation gets a short-lived one-use grant and unique AES-GCM transport key. The client verifies the plaintext pack hash and native tensor shapes. Protect Worker secrets, R2, CI, and signed artifacts. A licensed user on a compromised device can still extract models; client-side controls cannot prevent this absolutely.
 - Data leakage: no biometric networking/logging; stable redacted errors; minimize analytics/crash attachments.
 - Denial of service: host should enforce bounded image size; operations are serialized and lifecycle-scoped.
 

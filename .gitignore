@@ -31,5 +31,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+/example/android/.kotlin/
 /worker/node_modules/
 /worker/.wrangler/
+/work/
+/outputs/

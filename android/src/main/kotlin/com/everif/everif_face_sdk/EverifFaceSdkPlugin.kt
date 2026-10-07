@@ -12,10 +12,12 @@ class EverifFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private var engine: FaceEngine? = null
+    private lateinit var modelStore: ModelStore
     private val executor = Executors.newSingleThreadExecutor()
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
+        modelStore = ModelStore(context)
         channel = MethodChannel(binding.binaryMessenger, "everif_face_sdk")
         channel.setMethodCallHandler(this)
     }
@@ -28,12 +30,20 @@ class EverifFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
         executor.execute {
             try {
-                val faceEngine = engine ?: FaceEngine(context).also { engine = it }
                 val value = when (call.method) {
-                    "createTemplate" -> faceEngine.createTemplate(call.argument<ByteArray>("image") ?: error("invalidImage"))
-                    "verify" -> faceEngine.verify(call.argument<ByteArray>("image") ?: error("invalidImage"), call.argument<List<Double>>("template") ?: error("templateIncompatible"), call.argument<Boolean>("liveness") ?: true)
-                    "resetLiveness" -> { faceEngine.reset(); null }
-                    "dispose" -> { faceEngine.close(); engine = null; null }
+                    "hasModelPack" -> modelStore.has(call.argument<String>("version") ?: "")
+                    "installModelPack" -> {
+                        engine?.close(); engine = null
+                        modelStore.install(
+                            call.argument<String>("version") ?: error("modelUnavailable"),
+                            call.argument<Map<*, *>>("models") ?: error("modelUnavailable"),
+                        )
+                        null
+                    }
+                    "createTemplate" -> faceEngine().createTemplate(call.argument<ByteArray>("image") ?: error("invalidImage"))
+                    "verify" -> faceEngine().verify(call.argument<ByteArray>("image") ?: error("invalidImage"), call.argument<List<Double>>("template") ?: error("templateIncompatible"), call.argument<Boolean>("liveness") ?: true)
+                    "resetLiveness" -> { engine?.reset(); null }
+                    "dispose" -> { engine?.close(); engine = null; null }
                     else -> { main { result.notImplemented() }; return@execute }
                 }
                 main { result.success(value) }
@@ -42,6 +52,8 @@ class EverifFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
         }
     }
+
+    private fun faceEngine(): FaceEngine = engine ?: FaceEngine(modelStore.paths("1")).also { engine = it }
 
     private fun main(block: () -> Unit) = android.os.Handler(context.mainLooper).post(block)
     private fun sha256(value: String) = MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }

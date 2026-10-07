@@ -5,9 +5,11 @@ import CryptoKit
 public final class EverifFaceSdkPlugin: NSObject, FlutterPlugin {
   private let queue = DispatchQueue(label: "com.everif.face-sdk", qos: .userInitiated)
   private var engine: FaceEngine?
-  private let registrar: FlutterPluginRegistrar
+  private let modelStore: ModelStore?
 
-  init(registrar: FlutterPluginRegistrar) { self.registrar = registrar }
+  init(registrar: FlutterPluginRegistrar) {
+    self.modelStore = try? ModelStore()
+  }
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "everif_face_sdk", binaryMessenger: registrar.messenger())
@@ -23,15 +25,18 @@ public final class EverifFaceSdkPlugin: NSObject, FlutterPlugin {
     }
     queue.async {
       do {
-        if self.engine == nil { self.engine = try FaceEngine(assetPath: { self.registrar.lookupKey(forAsset: $0, fromPackage: "everif_face_sdk") }) }
-        guard let engine = self.engine else { throw FaceEngineError.internalError }
         let args = call.arguments as? [String: Any]
         let value: Any?
         switch call.method {
-        case "createTemplate": value = try engine.createTemplate(bytes: args?["image"] as? FlutterStandardTypedData)
-        case "verify": value = try engine.verify(bytes: args?["image"] as? FlutterStandardTypedData, template: args?["template"] as? [Double], liveness: args?["liveness"] as? Bool ?? true)
-        case "resetLiveness": engine.reset(); value = nil
-        case "dispose": engine.close(); self.engine = nil; value = nil
+        case "hasModelPack": value = self.modelStore?.has(version: args?["version"] as? String ?? "") ?? false
+        case "installModelPack":
+          self.engine?.close(); self.engine = nil
+          guard let modelStore = self.modelStore, let version = args?["version"] as? String, let models = args?["models"] as? [String: FlutterStandardTypedData] else { throw FaceEngineError.modelUnavailable }
+          try modelStore.install(version: version, models: models); value = nil
+        case "createTemplate": value = try self.faceEngine().createTemplate(bytes: args?["image"] as? FlutterStandardTypedData)
+        case "verify": value = try self.faceEngine().verify(bytes: args?["image"] as? FlutterStandardTypedData, template: args?["template"] as? [Double], liveness: args?["liveness"] as? Bool ?? true)
+        case "resetLiveness": self.engine?.reset(); value = nil
+        case "dispose": self.engine?.close(); self.engine = nil; value = nil
         default: DispatchQueue.main.async { result(FlutterMethodNotImplemented) }; return
         }
         DispatchQueue.main.async { result(value) }
@@ -41,5 +46,13 @@ public final class EverifFaceSdkPlugin: NSObject, FlutterPlugin {
         DispatchQueue.main.async { result(FlutterError(code: "internal", message: "Face operation failed.", details: nil)) }
       }
     }
+  }
+
+  private func faceEngine() throws -> FaceEngine {
+    if let engine { return engine }
+    guard let modelStore else { throw FaceEngineError.modelUnavailable }
+    let value = try FaceEngine(modelPaths: modelStore.paths(version: "1"))
+    engine = value
+    return value
   }
 }

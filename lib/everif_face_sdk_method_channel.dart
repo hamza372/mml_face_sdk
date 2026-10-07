@@ -29,6 +29,22 @@ class MethodChannelEverifFaceSdk extends EverifFaceSdkPlatform {
       .invokeMapMethod<Object?, Object?>('getDeviceBinding'))!;
 
   @override
+  Future<bool> hasModelPack(String version) async =>
+      await methodChannel.invokeMethod<bool>('hasModelPack', {
+        'version': version,
+      }) ??
+      false;
+
+  @override
+  Future<void> installModelPack(
+    String version,
+    Map<String, Uint8List> models,
+  ) => methodChannel.invokeMethod('installModelPack', {
+    'version': version,
+    'models': models,
+  });
+
+  @override
   Future<void> resetLiveness() => methodChannel.invokeMethod('resetLiveness');
 
   @override

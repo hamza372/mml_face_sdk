@@ -23,6 +23,11 @@ abstract class EverifFaceSdkPlatform extends PlatformInterface {
   }) => throw UnimplementedError();
   Future<Map<Object?, Object?>> getDeviceBinding() =>
       throw UnimplementedError();
+  Future<bool> hasModelPack(String version) => throw UnimplementedError();
+  Future<void> installModelPack(
+    String version,
+    Map<String, Uint8List> models,
+  ) => throw UnimplementedError();
   Future<void> resetLiveness() => throw UnimplementedError();
   Future<void> dispose() => throw UnimplementedError();
 }

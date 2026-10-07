@@ -9,7 +9,7 @@ The API accepts JPEG/PNG bytes. Decode, face detection, landmarks, preprocessing
 
 ## Licence bootstrap
 
-Embed only the raw 32-byte Ed25519 public key. Store the returned licence in Keychain/Keystore-backed secure storage. Activation is once per installation; subsequent launches call `initialize(license:)` without network. A reinstall can change the installation binding and requires a new code. Never embed the private key or activation-code database.
+Embed only the raw 32-byte Ed25519 public key. Store the returned licence in Keychain/Keystore-backed secure storage. Activation is once per installation: the Worker returns a signed licence plus a one-use, 15-minute model-pack grant. The SDK downloads the pack, decrypts it in memory, verifies its SHA-256 digest and native tensor shapes, then installs it in app-private, backup-excluded storage. Subsequent launches call `initialize(license:)` without network. A reinstall requires a new code. Never embed signing keys, model-pack keys, or the activation database.
 
 ## Template storage
 

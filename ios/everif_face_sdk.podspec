@@ -4,10 +4,10 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'everif_face_sdk'
-  s.version          = '0.1.0'
+  s.version          = '0.1.1-dev.1'
   s.summary          = 'Offline on-device face verification and passive liveness.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+On-device face verification and passive liveness with privately delivered model packs.
                        DESC
   s.homepage         = 'https://example.invalid/everif-face-sdk'
   s.license          = { :file => '../LICENSE' }

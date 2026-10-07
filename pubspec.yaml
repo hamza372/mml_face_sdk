@@ -1,6 +1,6 @@
 name: everif_face_sdk
 description: Offline, on-device 1:1 face verification and passive liveness SDK.
-version: 0.1.0
+version: 0.1.1-dev.1
 homepage: https://example.invalid/everif-face-sdk
 
 environment:
@@ -13,6 +13,7 @@ dependencies:
   plugin_platform_interface: ^2.0.2
   cryptography: ^2.7.0
   http: ^1.2.2
+  archive: ^4.0.7
 
 dev_dependencies:
   flutter_test:
@@ -41,11 +42,6 @@ flutter:
         pluginClass: EverifFaceSdkPlugin
       ios:
         pluginClass: EverifFaceSdkPlugin
-
-  assets:
-    - assets/models/mobileFaceNetARCNET.tflite
-    - assets/models/minifas_v2_2.7_80.tflite
-    - assets/models/minifas_v1se_4.0_80.tflite
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

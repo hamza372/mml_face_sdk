@@ -6,12 +6,14 @@ import 'package:cryptography/cryptography.dart';
 
 import 'everif_face_sdk_platform_interface.dart';
 import 'src/license.dart';
+import 'src/model_pack.dart';
 import 'src/types.dart';
 
 export 'package:cryptography/cryptography.dart'
     show SimplePublicKey, KeyPairType;
 export 'src/license.dart';
 export 'src/liveness_decision.dart';
+export 'src/model_pack.dart' show ModelPackDescriptor;
 export 'src/preprocessing.dart';
 export 'src/types.dart';
 
@@ -27,6 +29,8 @@ class EverifFaceSdk {
   final LicenseClock _clock;
   LicenseClaims? _license;
 
+  static const currentModelPackVersion = '1';
+
   bool get isLicensed => _license != null;
 
   Future<DeviceBinding> deviceBinding() async {
@@ -40,10 +44,19 @@ class EverifFaceSdk {
 
   Future<LicenseClaims> initialize({required String license}) async {
     final binding = await deviceBinding();
-    _license = await OfflineLicenseValidator(
+    final claims = await OfflineLicenseValidator(
       publicKey: publicLicenseKey,
       clock: _clock,
     ).validate(license, binding: binding);
+    if (!await EverifFaceSdkPlatform.instance.hasModelPack(
+      currentModelPackVersion,
+    )) {
+      throw const FaceSdkException(
+        FaceSdkError.modelUnavailable,
+        'The private model pack has not been installed.',
+      );
+    }
+    _license = claims;
     return _license!;
   }
 
@@ -52,13 +65,18 @@ class EverifFaceSdk {
     required String activationCode,
   }) async {
     final binding = await deviceBinding();
-    final token = await LicenseActivator().activate(
+    final activation = await LicenseActivator().activate(
       endpoint: endpoint,
       activationCode: activationCode,
       binding: binding,
     );
-    await initialize(license: token);
-    return token;
+    await OfflineLicenseValidator(
+      publicKey: publicLicenseKey,
+      clock: _clock,
+    ).validate(activation.license, binding: binding);
+    await ModelPackInstaller().downloadAndInstall(activation.modelPack);
+    await initialize(license: activation.license);
+    return activation.license;
   }
 
   Future<FaceTemplate> createTemplate(Uint8List encodedImage) async {

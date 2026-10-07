@@ -4,6 +4,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:http/http.dart' as http;
 
 import 'types.dart';
+import 'model_pack.dart';
 
 class DeviceBinding {
   const DeviceBinding({
@@ -109,7 +110,7 @@ class OfflineLicenseValidator {
 class LicenseActivator {
   LicenseActivator({http.Client? client}) : _client = client ?? http.Client();
   final http.Client _client;
-  Future<String> activate({
+  Future<ActivationResponse> activate({
     required Uri endpoint,
     required String activationCode,
     required DeviceBinding binding,
@@ -125,15 +126,31 @@ class LicenseActivator {
         'Activation was rejected.',
       );
     }
-    final token =
-        (jsonDecode(response.body) as Map<String, dynamic>)['license']
-            as String?;
-    if (token == null) {
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final token = body['license'] as String?;
+    final pack = body['modelPack'] as Map<String, dynamic>?;
+    if (token == null || pack == null) {
       throw const FaceSdkException(
         FaceSdkError.licenseInvalid,
         'Activation response was invalid.',
       );
     }
-    return token;
+    try {
+      return ActivationResponse(
+        license: token,
+        modelPack: ModelPackDescriptor.fromJson(pack),
+      );
+    } catch (_) {
+      throw const FaceSdkException(
+        FaceSdkError.licenseInvalid,
+        'Activation response was invalid.',
+      );
+    }
   }
+}
+
+class ActivationResponse {
+  const ActivationResponse({required this.license, required this.modelPack});
+  final String license;
+  final ModelPackDescriptor modelPack;
 }

@@ -1,3 +1,9 @@
+## 0.1.1-dev.1
+
+* Removed all biometric model weights from the publishable package.
+* Added one-time encrypted private model-pack delivery during activation.
+* Added app-private native model installation with tensor-shape validation.
+
 ## 0.1.0
 
 * Initial pre-release Flutter API for enrollment, recognition, and passive-liveness verification.
