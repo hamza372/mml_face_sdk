@@ -22,7 +22,15 @@ export default {
     if (request.method !== 'POST' || url.pathname !== '/v1/activate') return json({error: 'not_found'}, 404);
     let body: RequestBody; try { body = await request.json<RequestBody>(); } catch { return json({error: 'invalid_request'}, 400); }
     if (!body.activationCode || body.activationCode.length > 256 || !body.appId || body.appId.length > 255 || !body.deviceId || body.deviceId.length > 128 || !['android', 'ios'].includes(body.platform ?? '')) return json({error: 'invalid_request'}, 400);
-    let key: CryptoKey; try { key = await crypto.subtle.importKey('jwk', JSON.parse(env.LICENSE_PRIVATE_JWK), {name: 'Ed25519'}, false, ['sign']); } catch { return json({error: 'server_configuration'}, 503); }
+    let key: CryptoKey;
+    try {
+      const signingJwk = JSON.parse(env.LICENSE_PRIVATE_JWK) as JsonWebKey;
+      delete signingJwk.alg;
+      key = await crypto.subtle.importKey('jwk', signingJwk, {name: 'Ed25519'}, false, ['sign']);
+    } catch (error) {
+      console.error('Licence signing key import failed.', error);
+      return json({error: 'server_configuration'}, 503);
+    }
     if (!/^[a-f0-9]{64}$/.test(env.MODEL_PACK_SHA256) || !await env.MODEL_BUCKET.head(env.MODEL_PACK_OBJECT)) return json({error: 'model_pack_unavailable'}, 503);
     const codeHash = await hash(body.activationCode);
     const row = await env.LICENSE_DB.prepare('SELECT allowed_app_id, enabled FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<{allowed_app_id: string | null; enabled: number}>();
