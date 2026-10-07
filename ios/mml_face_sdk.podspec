@@ -9,9 +9,9 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 On-device face verification and passive liveness with privately delivered model packs.
                        DESC
-  s.homepage         = 'https://example.invalid/mml-face-sdk'
+  s.homepage         = 'https://mobilemllabs.com/'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'MML' => 'sdk@example.invalid' }
+  s.author           = { 'Mobile ML Labs' => 'hamzaasif19974@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
