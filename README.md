@@ -10,8 +10,8 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 - Recognition-only 1:1 comparison.
 - Passive liveness plus 1:1 verification using two MiniFAS models and a four-frame median.
 - Single-face, minimum-size, pose, landmark, finite-output, and template-version gates.
-- Seven-day, app- and device-bound Ed25519 licence verified offline after one-time activation and model-pack installation.
-- No feature reduction or accuracy weakening for trial users.
+- Lifetime Ed25519 licence bound to the customer app and each activated installation, then verified fully offline.
+- A reusable customer key activates multiple installations of one Android package or iOS bundle identifier.
 
 ## Quick start
 

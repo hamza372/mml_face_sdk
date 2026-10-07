@@ -143,10 +143,11 @@ class MmlFaceSdk {
 
   void _requireLicense() {
     final license = _license;
-    if (license == null || !_clock.now().isBefore(license.expiresAt)) {
+    if (license == null ||
+        (!license.isPerpetual && !_clock.now().isBefore(license.expiresAt!))) {
       throw const FaceSdkException(
         FaceSdkError.licenseInvalid,
-        'A valid, unexpired SDK licence is required.',
+        'A valid SDK licence is required.',
       );
     }
   }

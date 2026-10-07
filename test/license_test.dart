@@ -14,19 +14,19 @@ String enc(Object value) =>
     base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
 
 void main() {
-  test('validates signed app and device bound seven-day licence', () async {
+  test('validates a lifetime app and device bound licence', () async {
     final algorithm = Ed25519(),
         keys = await algorithm.newKeyPair(),
         pub = await keys.extractPublicKey();
     final now = DateTime.utc(2026, 1, 1);
     final iat = now.millisecondsSinceEpoch ~/ 1000;
-    final h = enc({'alg': 'EdDSA', 'typ': 'EVF-LIC'}),
+    final h = enc({'alg': 'EdDSA', 'typ': 'MML-LIC'}),
         p = enc({
           'jti': 'id',
           'appId': 'com.test',
           'deviceId': 'device',
           'iat': iat,
-          'exp': iat + 604800,
+          'perpetual': true,
         });
     final signed = utf8.encode('$h.$p');
     final sig = await algorithm.sign(signed, keyPair: keys);
@@ -44,6 +44,8 @@ void main() {
           ),
         );
     expect(claims.licenseId, 'id');
+    expect(claims.isPerpetual, isTrue);
+    expect(claims.expiresAt, isNull);
     expect(
       () => OfflineLicenseValidator(publicKey: pub, clock: FixedClock(now))
           .validate(

@@ -28,13 +28,15 @@ class LicenseClaims {
     required this.appId,
     required this.deviceId,
     required this.issuedAt,
+    required this.isPerpetual,
     required this.expiresAt,
   });
   final String licenseId;
   final String appId;
   final String deviceId;
   final DateTime issuedAt;
-  final DateTime expiresAt;
+  final bool isPerpetual;
+  final DateTime? expiresAt;
 }
 
 abstract interface class LicenseClock {
@@ -69,9 +71,16 @@ class OfflineLicenseValidator {
           jsonDecode(utf8.decode(_decode(parts[0]))) as Map<String, dynamic>;
       final body =
           jsonDecode(utf8.decode(_decode(parts[1]))) as Map<String, dynamic>;
-      if (header['alg'] != 'EdDSA' || header['typ'] != 'EVF-LIC') {
+      if (header['alg'] != 'EdDSA' || header['typ'] != 'MML-LIC') {
         throw const FormatException();
       }
+      final isPerpetual = body['perpetual'] == true;
+      final expiresAt = isPerpetual
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              (body['exp'] as int) * 1000,
+              isUtc: true,
+            );
       final claims = LicenseClaims(
         licenseId: body['jti'] as String,
         appId: body['appId'] as String,
@@ -80,25 +89,24 @@ class OfflineLicenseValidator {
           (body['iat'] as int) * 1000,
           isUtc: true,
         ),
-        expiresAt: DateTime.fromMillisecondsSinceEpoch(
-          (body['exp'] as int) * 1000,
-          isUtc: true,
-        ),
+        isPerpetual: isPerpetual,
+        expiresAt: expiresAt,
       );
       final now = clock.now().toUtc();
       if (claims.appId != binding.appId ||
           claims.deviceId != binding.deviceId ||
-          !now.isBefore(claims.expiresAt) ||
           claims.issuedAt.isAfter(now.add(const Duration(minutes: 5))) ||
-          claims.expiresAt.difference(claims.issuedAt) >
-              const Duration(days: 7, minutes: 5)) {
+          (!claims.isPerpetual &&
+              (!now.isBefore(claims.expiresAt!) ||
+                  claims.expiresAt!.difference(claims.issuedAt) >
+                      const Duration(days: 7, minutes: 5)))) {
         throw const FormatException();
       }
       return claims;
     } catch (_) {
       throw const FaceSdkException(
         FaceSdkError.licenseInvalid,
-        'Licence signature, binding, or validity window is invalid.',
+        'Licence signature or device binding is invalid.',
       );
     }
   }

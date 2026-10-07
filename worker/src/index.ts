@@ -25,15 +25,16 @@ export default {
     let key: CryptoKey; try { key = await crypto.subtle.importKey('jwk', JSON.parse(env.LICENSE_PRIVATE_JWK), {name: 'Ed25519'}, false, ['sign']); } catch { return json({error: 'server_configuration'}, 503); }
     if (!/^[a-f0-9]{64}$/.test(env.MODEL_PACK_SHA256) || !await env.MODEL_BUCKET.head(env.MODEL_PACK_OBJECT)) return json({error: 'model_pack_unavailable'}, 503);
     const codeHash = await hash(body.activationCode);
-    const row = await env.LICENSE_DB.prepare('SELECT redeemed_at FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<{redeemed_at: number | null}>();
-    if (!row || row.redeemed_at !== null) return json({error: 'activation_rejected'}, 403);
+    const row = await env.LICENSE_DB.prepare('SELECT allowed_app_id, enabled FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<{allowed_app_id: string | null; enabled: number}>();
+    if (!row || row.enabled !== 1 || (row.allowed_app_id !== null && row.allowed_app_id !== body.appId)) return json({error: 'activation_rejected'}, 403);
     const now = Math.floor(Date.now() / 1000), licenseId = crypto.randomUUID(), grant = randomToken(32), modelKey = randomToken(32);
-    const writes = await env.LICENSE_DB.batch([
-      env.LICENSE_DB.prepare('UPDATE activation_codes SET redeemed_at=?, license_id=?, app_id=?, device_id=? WHERE code_hash=? AND redeemed_at IS NULL').bind(now, licenseId, body.appId, body.deviceId, codeHash),
+    const binding = await env.LICENSE_DB.prepare('UPDATE activation_codes SET allowed_app_id=COALESCE(allowed_app_id, ?), redeemed_at=COALESCE(redeemed_at, ?), license_id=?, app_id=?, device_id=? WHERE code_hash=? AND enabled=1 AND (allowed_app_id IS NULL OR allowed_app_id=?)').bind(body.appId, now, licenseId, body.appId, body.deviceId, codeHash, body.appId).run();
+    if (binding.meta.changes !== 1) return json({error: 'activation_rejected'}, 403);
+    await env.LICENSE_DB.batch([
+      env.LICENSE_DB.prepare('INSERT INTO license_activations(license_id, code_hash, app_id, device_id, platform, activated_at) VALUES(?, ?, ?, ?, ?, ?)').bind(licenseId, codeHash, body.appId, body.deviceId, body.platform, now),
       env.LICENSE_DB.prepare('INSERT INTO model_grants(grant_hash, model_key, expires_at) VALUES(?, ?, ?)').bind(await hash(grant), modelKey, now + 15 * 60),
     ]);
-    if (writes[0].meta.changes !== 1) return json({error: 'activation_rejected'}, 403);
-    const header = encode({alg: 'EdDSA', typ: 'EVF-LIC'}), payload = encode({jti: licenseId, appId: body.appId, deviceId: body.deviceId, platform: body.platform, iat: now, exp: now + 7 * 24 * 60 * 60});
+    const header = encode({alg: 'EdDSA', typ: 'MML-LIC'}), payload = encode({jti: licenseId, appId: body.appId, deviceId: body.deviceId, platform: body.platform, iat: now, perpetual: true});
     const signature = await crypto.subtle.sign('Ed25519', key, new TextEncoder().encode(`${header}.${payload}`));
     return json({
       license: `${header}.${payload}.${b64url(new Uint8Array(signature))}`,

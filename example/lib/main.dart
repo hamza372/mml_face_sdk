@@ -60,7 +60,7 @@ class _DemoState extends State<Demo> {
         activationCode: code.text.trim(),
       );
       await storage.write(key: 'license', value: token);
-      setState(() => status = 'Activated for seven days');
+      setState(() => status = 'Lifetime licence activated');
     } catch (_) {
       setState(() => status = 'Activation failed');
     }
@@ -122,7 +122,7 @@ class _DemoState extends State<Demo> {
           TextField(
             controller: code,
             decoration: const InputDecoration(
-              labelText: 'One-time activation code',
+              labelText: 'Customer app licence key',
             ),
           ),
           FilledButton(onPressed: _activate, child: const Text('Activate')),
