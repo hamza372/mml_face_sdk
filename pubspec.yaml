@@ -1,7 +1,7 @@
-name: everif_face_sdk
+name: mml_face_sdk
 description: Offline, on-device 1:1 face verification and passive liveness SDK.
 version: 0.1.1-dev.1
-homepage: https://example.invalid/everif-face-sdk
+homepage: https://example.invalid/mml-face-sdk
 
 environment:
   sdk: ^3.10.4
@@ -38,10 +38,10 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.everif.everif_face_sdk
-        pluginClass: EverifFaceSdkPlugin
+        package: com.mml.mml_face_sdk
+        pluginClass: MmlFaceSdkPlugin
       ios:
-        pluginClass: EverifFaceSdkPlugin
+        pluginClass: MmlFaceSdkPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

@@ -1,4 +1,4 @@
-package com.everif.everif_face_sdk
+package com.mml.mml_face_sdk
 
 import android.content.Context
 import android.provider.Settings
@@ -8,7 +8,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.security.MessageDigest
 import java.util.concurrent.Executors
 
-class EverifFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class MmlFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private var engine: FaceEngine? = null
@@ -18,7 +18,7 @@ class EverifFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         modelStore = ModelStore(context)
-        channel = MethodChannel(binding.binaryMessenger, "everif_face_sdk")
+        channel = MethodChannel(binding.binaryMessenger, "mml_face_sdk")
         channel.setMethodCallHandler(this)
     }
 

@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'everif_face_sdk_platform_interface.dart';
+import 'mml_face_sdk_platform_interface.dart';
 
-class MethodChannelEverifFaceSdk extends EverifFaceSdkPlatform {
+class MethodChannelMmlFaceSdk extends MmlFaceSdkPlatform {
   @visibleForTesting
-  final methodChannel = const MethodChannel('everif_face_sdk');
+  final methodChannel = const MethodChannel('mml_face_sdk');
 
   @override
   Future<Map<Object?, Object?>> createTemplate(Uint8List image) async =>

@@ -1,17 +1,17 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint everif_face_sdk.podspec` to validate before publishing.
+# Run `pod lib lint mml_face_sdk.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'everif_face_sdk'
+  s.name             = 'mml_face_sdk'
   s.version          = '0.1.1-dev.1'
   s.summary          = 'Offline on-device face verification and passive liveness.'
   s.description      = <<-DESC
 On-device face verification and passive liveness with privately delivered model packs.
                        DESC
-  s.homepage         = 'https://example.invalid/everif-face-sdk'
+  s.homepage         = 'https://example.invalid/mml-face-sdk'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'eVerif' => 'sdk@example.invalid' }
+  s.author           = { 'MML' => 'sdk@example.invalid' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
@@ -26,5 +26,5 @@ On-device face verification and passive liveness with privately delivered model 
   # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
   # plugin's privacy impact, and then uncomment this line. For more information,
   # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'everif_face_sdk_privacy' => ['Resources/PrivacyInfo.xcprivacy']}
+  # s.resource_bundles = {'mml_face_sdk_privacy' => ['Resources/PrivacyInfo.xcprivacy']}
 end

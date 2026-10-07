@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:everif_face_sdk/everif_face_sdk.dart';
+import 'package:mml_face_sdk/mml_face_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,13 +17,11 @@ class _DemoState extends State<Demo> {
   static const storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  static const publicKeyB64 = String.fromEnvironment(
-    'EVERIF_LICENSE_PUBLIC_KEY',
-  );
-  static const activationUrl = String.fromEnvironment('EVERIF_ACTIVATION_URL');
+  static const publicKeyB64 = String.fromEnvironment('MML_LICENSE_PUBLIC_KEY');
+  static const activationUrl = String.fromEnvironment('MML_ACTIVATION_URL');
   final code = TextEditingController();
   final picker = ImagePicker();
-  EverifFaceSdk? sdk;
+  MmlFaceSdk? sdk;
   FaceTemplate? template;
   String status = 'Not initialized';
 
@@ -35,10 +33,10 @@ class _DemoState extends State<Demo> {
 
   Future<void> _start() async {
     if (publicKeyB64.isEmpty) {
-      setState(() => status = 'Set EVERIF_LICENSE_PUBLIC_KEY.');
+      setState(() => status = 'Set MML_LICENSE_PUBLIC_KEY.');
       return;
     }
-    sdk = EverifFaceSdk(
+    sdk = MmlFaceSdk(
       publicLicenseKey: SimplePublicKey(
         base64Url.decode(base64Url.normalize(publicKeyB64)),
         type: KeyPairType.ed25519,
@@ -114,7 +112,7 @@ class _DemoState extends State<Demo> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('eVerif Face SDK')),
+    appBar: AppBar(title: const Text('MML Face SDK')),
     body: Padding(
       padding: const EdgeInsets.all(20),
       child: ListView(

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 
-import 'everif_face_sdk_platform_interface.dart';
+import 'mml_face_sdk_platform_interface.dart';
 import 'src/license.dart';
 import 'src/model_pack.dart';
 import 'src/types.dart';
@@ -17,8 +17,8 @@ export 'src/model_pack.dart' show ModelPackDescriptor;
 export 'src/preprocessing.dart';
 export 'src/types.dart';
 
-class EverifFaceSdk {
-  EverifFaceSdk({
+class MmlFaceSdk {
+  MmlFaceSdk({
     required this.publicLicenseKey,
     this.matchThreshold = 0.70,
     LicenseClock? clock,
@@ -34,7 +34,7 @@ class EverifFaceSdk {
   bool get isLicensed => _license != null;
 
   Future<DeviceBinding> deviceBinding() async {
-    final raw = await EverifFaceSdkPlatform.instance.getDeviceBinding();
+    final raw = await MmlFaceSdkPlatform.instance.getDeviceBinding();
     return DeviceBinding(
       appId: raw['appId']! as String,
       deviceId: raw['deviceId']! as String,
@@ -48,7 +48,7 @@ class EverifFaceSdk {
       publicKey: publicLicenseKey,
       clock: _clock,
     ).validate(license, binding: binding);
-    if (!await EverifFaceSdkPlatform.instance.hasModelPack(
+    if (!await MmlFaceSdkPlatform.instance.hasModelPack(
       currentModelPackVersion,
     )) {
       throw const FaceSdkException(
@@ -82,7 +82,7 @@ class EverifFaceSdk {
   Future<FaceTemplate> createTemplate(Uint8List encodedImage) async {
     _requireLicense();
     final raw = await _native(
-      () => EverifFaceSdkPlatform.instance.createTemplate(encodedImage),
+      () => MmlFaceSdkPlatform.instance.createTemplate(encodedImage),
     );
     return FaceTemplate.fromNative(raw);
   }
@@ -117,7 +117,7 @@ class EverifFaceSdk {
       );
     }
     final raw = await _native(
-      () => EverifFaceSdkPlatform.instance.verify(
+      () => MmlFaceSdkPlatform.instance.verify(
         image,
         template.embedding,
         liveness: liveness,
@@ -138,9 +138,8 @@ class EverifFaceSdk {
     );
   }
 
-  Future<void> resetLiveness() =>
-      EverifFaceSdkPlatform.instance.resetLiveness();
-  Future<void> dispose() => EverifFaceSdkPlatform.instance.dispose();
+  Future<void> resetLiveness() => MmlFaceSdkPlatform.instance.resetLiveness();
+  Future<void> dispose() => MmlFaceSdkPlatform.instance.dispose();
 
   void _requireLicense() {
     final license = _license;

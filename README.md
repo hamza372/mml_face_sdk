@@ -1,4 +1,4 @@
-# eVerif Face SDK
+# MML Face SDK
 
 Production-oriented Flutter plugin for offline, on-device 1:1 face comparison and passive liveness on Android and iOS. Native code performs face detection, five-landmark alignment, TensorFlow Lite inference, quality gating, and decision state. Model weights are not published with this package: activation installs a privately delivered, per-activation encrypted model pack into app-private storage. The service never receives images, video, embeddings, or templates.
 
@@ -16,7 +16,9 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 ## Quick start
 
 ```dart
-final sdk = EverifFaceSdk(
+import 'package:mml_face_sdk/mml_face_sdk.dart';
+
+final sdk = MmlFaceSdk(
   publicLicenseKey: SimplePublicKey(publicKeyBytes, type: KeyPairType.ed25519),
 );
 await sdk.initialize(license: tokenStoredInSecureStorage);
@@ -36,7 +38,7 @@ flutter pub get
 flutter analyze
 flutter test
 cd example
-flutter run --dart-define=EVERIF_LICENSE_PUBLIC_KEY=BASE64URL_RAW_ED25519_KEY --dart-define=EVERIF_ACTIVATION_URL=http://127.0.0.1:8787/v1/activate
+flutter run --dart-define=MML_LICENSE_PUBLIC_KEY=BASE64URL_RAW_ED25519_KEY --dart-define=MML_ACTIVATION_URL=http://127.0.0.1:8787/v1/activate
 ```
 
 The source attendance app is not a dependency and is not modified. This public package contains no biometric model weights. Commercial activation and a private model pack are required for inference.

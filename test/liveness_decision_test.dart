@@ -1,4 +1,4 @@
-import 'package:everif_face_sdk/everif_face_sdk.dart';
+import 'package:mml_face_sdk/mml_face_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

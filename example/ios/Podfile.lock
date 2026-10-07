@@ -1,12 +1,12 @@
 PODS:
-  - everif_face_sdk (0.1.1-dev.1):
-    - Flutter
-    - TensorFlowLiteSwift (~> 2.17.0)
   - Flutter (1.0.0)
   - flutter_secure_storage (6.0.0):
     - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
+  - mml_face_sdk (0.1.1-dev.1):
+    - Flutter
+    - TensorFlowLiteSwift (~> 2.17.0)
   - TensorFlowLiteC (2.17.0):
     - TensorFlowLiteC/Core (= 2.17.0)
   - TensorFlowLiteC/Core (2.17.0)
@@ -18,10 +18,10 @@ PODS:
   - TensorFlowLiteSwift/Privacy (2.17.0)
 
 DEPENDENCIES:
-  - everif_face_sdk (from `.symlinks/plugins/everif_face_sdk/ios`)
   - Flutter (from `Flutter`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - mml_face_sdk (from `.symlinks/plugins/mml_face_sdk/ios`)
 
 SPEC REPOS:
   trunk:
@@ -29,20 +29,20 @@ SPEC REPOS:
     - TensorFlowLiteSwift
 
 EXTERNAL SOURCES:
-  everif_face_sdk:
-    :path: ".symlinks/plugins/everif_face_sdk/ios"
   Flutter:
     :path: Flutter
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  mml_face_sdk:
+    :path: ".symlinks/plugins/mml_face_sdk/ios"
 
 SPEC CHECKSUMS:
-  everif_face_sdk: 79d6cac355548130d5997373fa3205b330e5c69e
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
   image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
+  mml_face_sdk: edc83fe29c13a326ead8cc6a40087ee4774af9ac
   TensorFlowLiteC: eac6d689a8d391d1b202dc59e3d9165ba64aaf73
   TensorFlowLiteSwift: 723fe42222815e72490c79feeff05305530de393
 

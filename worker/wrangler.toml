@@ -1,4 +1,4 @@
-name = "everif-face-license"
+name = "mml-face-license"
 main = "src/index.ts"
 compatibility_date = "2025-01-24"
 
@@ -9,10 +9,10 @@ MODEL_PACK_SHA256 = "d2387b95b294fcbb0035be383a6a301065c8211c8ece9bcc7ecbd780f3b
 
 [[r2_buckets]]
 binding = "MODEL_BUCKET"
-bucket_name = "everif-face-models"
+bucket_name = "mml-face-models"
 
 [[d1_databases]]
 binding = "LICENSE_DB"
-database_name = "everif-face-license"
+database_name = "mml-face-license"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 migrations_dir = "migrations"

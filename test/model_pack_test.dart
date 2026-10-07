@@ -2,14 +2,14 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:everif_face_sdk/everif_face_sdk_platform_interface.dart';
-import 'package:everif_face_sdk/src/model_pack.dart';
+import 'package:mml_face_sdk/mml_face_sdk_platform_interface.dart';
+import 'package:mml_face_sdk/src/model_pack.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class InstallingPlatform extends EverifFaceSdkPlatform
+class InstallingPlatform extends MmlFaceSdkPlatform
     with MockPlatformInterfaceMixin {
   String? version;
   Map<String, Uint8List>? models;
@@ -47,7 +47,7 @@ void main() {
       ...box.mac.bytes,
     ]);
     final platform = InstallingPlatform();
-    EverifFaceSdkPlatform.instance = platform;
+    MmlFaceSdkPlatform.instance = platform;
 
     await ModelPackInstaller(
       client: MockClient((_) async => http.Response.bytes(responseBytes, 200)),

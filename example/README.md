@@ -1,6 +1,6 @@
-# everif_face_sdk_example
+# mml_face_sdk_example
 
-Demonstrates how to use the everif_face_sdk plugin.
+Demonstrates how to use the mml_face_sdk plugin.
 
 ## Getting Started
 

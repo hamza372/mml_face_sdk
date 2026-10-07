@@ -1,4 +1,4 @@
-group = "com.everif.everif_face_sdk"
+group = "com.mml.mml_face_sdk"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -25,7 +25,7 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 android {
-    namespace = "com.everif.everif_face_sdk"
+    namespace = "com.mml.mml_face_sdk"
 
     compileSdk = 36
 

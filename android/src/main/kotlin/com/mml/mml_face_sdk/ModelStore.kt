@@ -1,11 +1,11 @@
-package com.everif.everif_face_sdk
+package com.mml.mml_face_sdk
 
 import android.content.Context
 import org.tensorflow.lite.Interpreter
 import java.io.File
 
 internal class ModelStore(context: Context) {
-    private val root = File(context.noBackupFilesDir, "everif_face_sdk/model_packs")
+    private val root = File(context.noBackupFilesDir, "mml_face_sdk/model_packs")
     private val names = setOf(
         "mobileFaceNetARCNET.tflite",
         "minifas_v2_2.7_80.tflite",

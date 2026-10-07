@@ -1,5 +1,5 @@
 {
-  "name": "everif-face-license-worker",
+  "name": "mml-face-license-worker",
   "private": true,
   "scripts": {"dev": "wrangler dev", "deploy": "wrangler deploy", "build:model-pack": "node scripts/build-model-pack.mjs", "db:local": "wrangler d1 migrations apply LICENSE_DB --local", "db:remote": "wrangler d1 migrations apply LICENSE_DB --remote"},
   "devDependencies": {"@cloudflare/workers-types": "^5.20261006.1", "typescript": "^5.7.2", "wrangler": "^4.0.0"}

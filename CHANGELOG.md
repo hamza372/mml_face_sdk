@@ -1,5 +1,6 @@
 ## 0.1.1-dev.1
 
+* Renamed the package and public API to `mml_face_sdk` and `MmlFaceSdk`.
 * Removed all biometric model weights from the publishable package.
 * Added one-time encrypted private model-pack delivery during activation.
 * Added app-private native model installation with tensor-shape validation.

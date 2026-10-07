@@ -2,8 +2,8 @@ import Flutter
 import UIKit
 import CryptoKit
 
-public final class EverifFaceSdkPlugin: NSObject, FlutterPlugin {
-  private let queue = DispatchQueue(label: "com.everif.face-sdk", qos: .userInitiated)
+public final class MmlFaceSdkPlugin: NSObject, FlutterPlugin {
+  private let queue = DispatchQueue(label: "com.mml.face-sdk", qos: .userInitiated)
   private var engine: FaceEngine?
   private let modelStore: ModelStore?
 
@@ -12,8 +12,8 @@ public final class EverifFaceSdkPlugin: NSObject, FlutterPlugin {
   }
 
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "everif_face_sdk", binaryMessenger: registrar.messenger())
-    registrar.addMethodCallDelegate(EverifFaceSdkPlugin(registrar: registrar), channel: channel)
+    let channel = FlutterMethodChannel(name: "mml_face_sdk", binaryMessenger: registrar.messenger())
+    registrar.addMethodCallDelegate(MmlFaceSdkPlugin(registrar: registrar), channel: channel)
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

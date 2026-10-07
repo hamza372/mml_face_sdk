@@ -5,7 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:http/http.dart' as http;
 
-import '../everif_face_sdk_platform_interface.dart';
+import '../mml_face_sdk_platform_interface.dart';
 import 'types.dart';
 
 class ModelPackDescriptor {
@@ -85,7 +85,7 @@ class ModelPackInstaller {
           models.length != requiredModels.length) {
         throw const FormatException('Model pack is incomplete.');
       }
-      await EverifFaceSdkPlatform.instance.installModelPack(
+      await MmlFaceSdkPlatform.instance.installModelPack(
         descriptor.version,
         models,
       );

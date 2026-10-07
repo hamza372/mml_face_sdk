@@ -1,4 +1,4 @@
-package com.everif.everif_face_sdk
+package com.mml.mml_face_sdk
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

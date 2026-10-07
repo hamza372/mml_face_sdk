@@ -12,7 +12,7 @@ final class ModelStore {
 
   init() throws {
     guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { throw FaceEngineError.modelUnavailable }
-    root = base.appendingPathComponent("EverifFaceSdk/model_packs", isDirectory: true)
+    root = base.appendingPathComponent("MmlFaceSdk/model_packs", isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     var values = URLResourceValues(); values.isExcludedFromBackup = true
     var mutableRoot = root; try? mutableRoot.setResourceValues(values)

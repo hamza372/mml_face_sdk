@@ -2,14 +2,14 @@ import 'dart:typed_data';
 
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'everif_face_sdk_method_channel.dart';
+import 'mml_face_sdk_method_channel.dart';
 
-abstract class EverifFaceSdkPlatform extends PlatformInterface {
-  EverifFaceSdkPlatform() : super(token: _token);
+abstract class MmlFaceSdkPlatform extends PlatformInterface {
+  MmlFaceSdkPlatform() : super(token: _token);
   static final Object _token = Object();
-  static EverifFaceSdkPlatform _instance = MethodChannelEverifFaceSdk();
-  static EverifFaceSdkPlatform get instance => _instance;
-  static set instance(EverifFaceSdkPlatform instance) {
+  static MmlFaceSdkPlatform _instance = MethodChannelMmlFaceSdk();
+  static MmlFaceSdkPlatform get instance => _instance;
+  static set instance(MmlFaceSdkPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }
