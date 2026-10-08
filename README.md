@@ -6,7 +6,7 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 ## See it in action
 
-[![Watch the complete MML Face SDK demonstration](https://raw.githubusercontent.com/hamza372/mml_face_sdk/main/assets/demo/mml-face-sdk-demo-poster.jpg)](https://mobilemllabs.com/face-sdk)
+[![MML Face SDK demonstration showing enrollment, replay rejection, and successful live verification](https://raw.githubusercontent.com/hamza372/mml_face_sdk/main/assets/demo/mml-face-sdk-demo.gif)](https://mobilemllabs.com/face-sdk)
 
 **[Watch the complete 36-second demonstration on the MML Face SDK product page](https://mobilemllabs.com/face-sdk)** or [open the full-quality MP4 directly](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4).
 

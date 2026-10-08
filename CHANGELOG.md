@@ -1,3 +1,7 @@
+## 0.1.1-dev.8
+
+* Restored the autoplaying demonstration GIF to the GitHub and pub.dev README while retaining links to the complete recording.
+
 ## 0.1.1-dev.7
 
 * Made the Face SDK product page the primary package homepage.
