@@ -1,3 +1,8 @@
+## 0.1.1-dev.6
+
+* Added a recorded enrollment, replay-rejection, and live-verification demonstration to the package documentation.
+* Added optimized MP4, animated GIF, and poster media for GitHub and website presentation.
+
 ## 0.1.1-dev.5
 
 * Raised the default face-similarity match threshold from 0.70 to 0.75.

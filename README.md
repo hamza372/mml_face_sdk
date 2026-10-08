@@ -4,6 +4,14 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 > Status: pre-release integration baseline. The bundled thresholds (`0.75` similarity and `0.75` liveness) are compatibility defaults. They are **not independently validated operating points**. Calibrate against representative users, devices, capture conditions, and attack media before production.
 
+## See it in action
+
+[![MML Face SDK demonstration showing replay rejection followed by successful live verification](https://raw.githubusercontent.com/hamza372/mml_face_sdk/main/assets/demo/mml-face-sdk-demo.gif)](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4)
+
+The demonstration shows local enrollment, successful live verification, rejection of a presentation/replay attempt, and successful verification when the live user returns. [Watch the full-quality MP4](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4).
+
+> Demonstration recorded on one Android device under controlled conditions. It is not an independent presentation-attack certification. Production deployments must validate thresholds and attack performance for their supported devices and environments.
+
 ## Capabilities
 
 - Enrollment/template creation from one encoded image.
