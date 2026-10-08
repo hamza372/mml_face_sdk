@@ -16,8 +16,22 @@ abstract class MmlFaceSdkPlatform extends PlatformInterface {
 
   Future<Map<Object?, Object?>> createTemplate(Uint8List image) =>
       throw UnimplementedError();
+  Future<Map<Object?, Object?>> createTemplateFrame(
+    Uint8List nv21,
+    int width,
+    int height,
+    int rotationDegrees,
+  ) => throw UnimplementedError();
   Future<Map<Object?, Object?>> verify(
     Uint8List image,
+    List<double> template, {
+    required bool liveness,
+  }) => throw UnimplementedError();
+  Future<Map<Object?, Object?>> verifyFrame(
+    Uint8List nv21,
+    int width,
+    int height,
+    int rotationDegrees,
     List<double> template, {
     required bool liveness,
   }) => throw UnimplementedError();

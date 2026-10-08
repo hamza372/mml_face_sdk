@@ -1,3 +1,10 @@
+## 0.1.1-dev.4
+
+* Rebuilt the demo with an embedded camera experience for registration and continuous verification.
+* Added native Android NV21 camera-frame APIs for immediate stream-based enrollment, recognition, and liveness without taking photos.
+* Added locally stored person names, live recognition/liveness overlays, and a dedicated recognition success screen.
+* Refreshed the demonstration UI with a production-style home screen and guided face capture.
+
 ## 0.1.1-dev.3
 
 * Fixed the demo enrollment flow so face actions remain disabled until activation and model installation finish.

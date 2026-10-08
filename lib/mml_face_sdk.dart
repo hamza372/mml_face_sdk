@@ -87,6 +87,24 @@ class MmlFaceSdk {
     return FaceTemplate.fromNative(raw);
   }
 
+  Future<FaceTemplate> createTemplateFromFrame({
+    required Uint8List nv21,
+    required int width,
+    required int height,
+    required int rotationDegrees,
+  }) async {
+    _requireLicense();
+    final raw = await _native(
+      () => MmlFaceSdkPlatform.instance.createTemplateFrame(
+        nv21,
+        width,
+        height,
+        rotationDegrees,
+      ),
+    );
+    return FaceTemplate.fromNative(raw);
+  }
+
   Future<VerificationResult> recognize({
     required Uint8List encodedImage,
     required FaceTemplate template,
@@ -97,25 +115,43 @@ class MmlFaceSdk {
     required FaceTemplate template,
   }) => _compare(encodedImage, template, liveness: true);
 
+  Future<VerificationResult> recognizeFrame({
+    required Uint8List nv21,
+    required int width,
+    required int height,
+    required int rotationDegrees,
+    required FaceTemplate template,
+  }) => _compareFrame(
+    nv21,
+    width,
+    height,
+    rotationDegrees,
+    template,
+    liveness: false,
+  );
+
+  Future<VerificationResult> verifyFrame({
+    required Uint8List nv21,
+    required int width,
+    required int height,
+    required int rotationDegrees,
+    required FaceTemplate template,
+  }) => _compareFrame(
+    nv21,
+    width,
+    height,
+    rotationDegrees,
+    template,
+    liveness: true,
+  );
+
   Future<VerificationResult> _compare(
     Uint8List image,
     FaceTemplate template, {
     required bool liveness,
   }) async {
     _requireLicense();
-    if (template.embedding.isEmpty ||
-        template.embedding.any((value) => !value.isFinite)) {
-      throw const FaceSdkException(
-        FaceSdkError.templateIncompatible,
-        'Template contains invalid values.',
-      );
-    }
-    if (template.modelId != FaceTemplate.currentModelId) {
-      throw const FaceSdkException(
-        FaceSdkError.templateIncompatible,
-        'Template was created with an incompatible model.',
-      );
-    }
+    _validateTemplate(template);
     final raw = await _native(
       () => MmlFaceSdkPlatform.instance.verify(
         image,
@@ -123,6 +159,36 @@ class MmlFaceSdk {
         liveness: liveness,
       ),
     );
+    return _result(raw, liveness: liveness);
+  }
+
+  Future<VerificationResult> _compareFrame(
+    Uint8List nv21,
+    int width,
+    int height,
+    int rotationDegrees,
+    FaceTemplate template, {
+    required bool liveness,
+  }) async {
+    _requireLicense();
+    _validateTemplate(template);
+    final raw = await _native(
+      () => MmlFaceSdkPlatform.instance.verifyFrame(
+        nv21,
+        width,
+        height,
+        rotationDegrees,
+        template.embedding,
+        liveness: liveness,
+      ),
+    );
+    return _result(raw, liveness: liveness);
+  }
+
+  VerificationResult _result(
+    Map<Object?, Object?> raw, {
+    required bool liveness,
+  }) {
     final similarity = (raw['similarity'] as num?)?.toDouble();
     return VerificationResult(
       matched:
@@ -136,6 +202,22 @@ class MmlFaceSdk {
       spoofLatched: raw['spoofLatched'] as bool? ?? false,
       quality: FaceQuality.fromNative(raw),
     );
+  }
+
+  void _validateTemplate(FaceTemplate template) {
+    if (template.embedding.isEmpty ||
+        template.embedding.any((value) => !value.isFinite)) {
+      throw const FaceSdkException(
+        FaceSdkError.templateIncompatible,
+        'Template contains invalid values.',
+      );
+    }
+    if (template.modelId != FaceTemplate.currentModelId) {
+      throw const FaceSdkException(
+        FaceSdkError.templateIncompatible,
+        'Template was created with an incompatible model.',
+      );
+    }
   }
 
   Future<void> resetLiveness() => MmlFaceSdkPlatform.instance.resetLiveness();

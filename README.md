@@ -15,7 +15,7 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 ## Try the Android demo
 
-[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `f832c79d01aa0ba408e894f04d165315554f8719a674a67ce87b307078fc85ca`.
+[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `9f93757980d2f7f0d824bf3b35c5b38ae1486128e90118840082f0bd64d3e601`.
 
 For a seven-day trial in your own app, [contact Mobile ML Labs on WhatsApp](https://wa.me/923318421757?text=Hi%20Mobile%20ML%20Labs%2C%20I%20want%20to%20evaluate%20MML%20Face%20SDK.%0A%0AName%20%2F%20company%3A%0APlatform%20(Android%20or%20iOS)%3A%0APackage%20name%20%2F%20bundle%20ID%3A%0AApp%20or%20website%20link%3A%0AIntended%20use%3A) with your platform and exact Android package name or iOS bundle identifier.
 
@@ -33,7 +33,7 @@ final recognition = await sdk.recognize(encodedImage: probeJpegBytes, template: 
 final verified = await sdk.verify(encodedImage: nextLivenessFrame, template: template);
 ```
 
-For liveness, submit four consecutive same-session frames/captures. Call `resetLiveness()` when the subject, camera session, or flow changes. The demo uses the system camera picker for portability; a shipping app should integrate a guided native frame stream at a controlled cadence.
+For liveness, submit four consecutive same-session frames. Call `resetLiveness()` when the subject, camera session, or flow changes. The demo keeps an embedded camera preview open and processes Android NV21 frames directly as soon as the native engine is available.
 
 See [integration guide](doc/INTEGRATION.md), [API reference](doc/API.md), [threat model](doc/THREAT_MODEL.md), [attack statement](doc/SUPPORTED_ATTACKS.md), [privacy notes](doc/PRIVACY.md), [model inventory](doc/MODELS.md), and [release checklist](doc/RELEASE_CHECKLIST.md).
 

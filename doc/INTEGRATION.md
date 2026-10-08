@@ -5,7 +5,7 @@
 - Android API 24+, camera permission in the host manifest, Java 17 toolchain.
 - iOS 13+, `NSCameraUsageDescription`, CocoaPods, and a physical device for camera/PAD testing.
 
-The API accepts JPEG/PNG bytes. Decode, face detection, landmarks, preprocessing, and inference stay native. Do not resize, normalize, or crop before passing bytes.
+The encoded-image API accepts JPEG/PNG bytes. Android also provides raw NV21 frame methods for instant camera-stream processing. Decode, face detection, landmarks, preprocessing, and inference stay native. Do not resize, normalize, or crop before passing bytes.
 
 ## Licence bootstrap
 
@@ -18,5 +18,7 @@ Embed only the raw 32-byte Ed25519 public key. Store the returned licence in Key
 ## Capture flow
 
 Use front camera, even lighting, neutral frontal pose, one face, adequate apparent size, and four consecutive liveness samples. Keep a single SDK instance for the session. Reset on pause, timeout, camera switch, or subject change; dispose when the owning screen/service ends. Serialize calls—concurrent inference is unsupported.
+
+For real-time Android verification, create the camera with `ImageFormatGroup.nv21`, call `startImageStream`, pass the raw NV21 bytes and camera rotation to `recognizeFrame` or `verifyFrame`, and ignore new frames while one is being processed. Recognition can complete on the first matching frame. Passive liveness intentionally requires four accepted frames before matching.
 
 Treat face/quality errors as retryable guidance. A spoof latch requires ending or explicitly resetting the attempt. Do not expose raw scores as proof of identity.

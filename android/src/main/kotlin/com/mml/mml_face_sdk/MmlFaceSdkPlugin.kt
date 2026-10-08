@@ -41,7 +41,21 @@ class MmlFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         null
                     }
                     "createTemplate" -> faceEngine().createTemplate(call.argument<ByteArray>("image") ?: error("invalidImage"))
+                    "createTemplateFrame" -> faceEngine().createTemplateFrame(
+                        call.argument<ByteArray>("nv21") ?: error("invalidImage"),
+                        call.argument<Int>("width") ?: error("invalidImage"),
+                        call.argument<Int>("height") ?: error("invalidImage"),
+                        call.argument<Int>("rotationDegrees") ?: error("invalidImage"),
+                    )
                     "verify" -> faceEngine().verify(call.argument<ByteArray>("image") ?: error("invalidImage"), call.argument<List<Double>>("template") ?: error("templateIncompatible"), call.argument<Boolean>("liveness") ?: true)
+                    "verifyFrame" -> faceEngine().verifyFrame(
+                        call.argument<ByteArray>("nv21") ?: error("invalidImage"),
+                        call.argument<Int>("width") ?: error("invalidImage"),
+                        call.argument<Int>("height") ?: error("invalidImage"),
+                        call.argument<Int>("rotationDegrees") ?: error("invalidImage"),
+                        call.argument<List<Double>>("template") ?: error("templateIncompatible"),
+                        call.argument<Boolean>("liveness") ?: true,
+                    )
                     "resetLiveness" -> { engine?.reset(); null }
                     "dispose" -> { engine?.close(); engine = null; null }
                     else -> { main { result.notImplemented() }; return@execute }

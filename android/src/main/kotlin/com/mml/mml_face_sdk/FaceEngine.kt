@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Matrix
+import com.google.mlkit.vision.common.InputImage.IMAGE_FORMAT_NV21
 import androidx.exifinterface.media.ExifInterface
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
@@ -33,8 +34,22 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
         return try { quality(bitmap, face) + mapOf("embedding" to embedding(align(bitmap, face)).toList()) } finally { bitmap.recycle() }
     }
 
+    fun createTemplateFrame(nv21: ByteArray, width: Int, height: Int, rotationDegrees: Int): Map<String, Any> {
+        val (bitmap, face) = validatedFrame(nv21, width, height, rotationDegrees)
+        return try { quality(bitmap, face) + mapOf("embedding" to embedding(align(bitmap, face)).toList()) } finally { bitmap.recycle() }
+    }
+
     fun verify(bytes: ByteArray, template: List<Double>, liveness: Boolean): Map<String, Any?> {
         val (bitmap, face) = validatedFace(bytes)
+        return verifyBitmap(bitmap, face, template, liveness)
+    }
+
+    fun verifyFrame(nv21: ByteArray, width: Int, height: Int, rotationDegrees: Int, template: List<Double>, liveness: Boolean): Map<String, Any?> {
+        val (bitmap, face) = validatedFrame(nv21, width, height, rotationDegrees)
+        return verifyBitmap(bitmap, face, template, liveness)
+    }
+
+    private fun verifyBitmap(bitmap: Bitmap, face: Face, template: List<Double>, liveness: Boolean): Map<String, Any?> {
         try {
             val result = quality(bitmap, face).toMutableMap<String, Any?>()
             if (liveness) {
@@ -63,12 +78,60 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     private fun validatedFace(bytes: ByteArray): Pair<Bitmap, Face> {
         val bitmap = decodeOriented(bytes)
         val faces = Tasks.await(detector.process(InputImage.fromBitmap(bitmap, 0)))
+        return validateDetectedFace(bitmap, faces)
+    }
+
+    private fun validatedFrame(nv21: ByteArray, width: Int, height: Int, rotationDegrees: Int): Pair<Bitmap, Face> {
+        require(width > 0 && height > 0 && rotationDegrees in listOf(0, 90, 180, 270)) { "invalidImage" }
+        val faces = Tasks.await(detector.process(InputImage.fromByteArray(nv21, width, height, rotationDegrees, IMAGE_FORMAT_NV21)))
+        val bitmap = rotateBitmap(nv21ToBitmap(nv21, width, height), rotationDegrees.toFloat())
+        return validateDetectedFace(bitmap, faces)
+    }
+
+    private fun validateDetectedFace(bitmap: Bitmap, faces: List<Face>): Pair<Bitmap, Face> {
         if (faces.isEmpty()) { bitmap.recycle(); error("noFace") }
         if (faces.size != 1) { bitmap.recycle(); error("multipleFaces") }
         val face = faces.single(); val ratio = face.boundingBox.width().toDouble() / min(bitmap.width, bitmap.height)
         if (ratio < .20) { bitmap.recycle(); error("faceTooSmall") }
         if (abs(face.headEulerAngleY) > 20 || abs(face.headEulerAngleZ) > 20) { bitmap.recycle(); error("faceNotFrontal") }
         return bitmap to face
+    }
+
+    private fun rotateBitmap(source: Bitmap, degrees: Float): Bitmap {
+        if (degrees == 0f) return source
+        val matrix = Matrix().apply { postRotate(degrees) }
+        val rotated = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        if (rotated !== source) source.recycle()
+        return rotated
+    }
+
+    private fun nv21ToBitmap(nv21: ByteArray, width: Int, height: Int): Bitmap {
+        require(nv21.size >= width * height * 3 / 2) { "invalidImage" }
+        val output = IntArray(width * height)
+        val frameSize = width * height
+        var pixel = 0
+        for (row in 0 until height) {
+            var uv = frameSize + (row shr 1) * width
+            var u = 0
+            var v = 0
+            for (column in 0 until width) {
+                var y = (nv21[pixel].toInt() and 0xff) - 16
+                if (y < 0) y = 0
+                if ((column and 1) == 0) {
+                    v = (nv21[uv++].toInt() and 0xff) - 128
+                    u = (nv21[uv++].toInt() and 0xff) - 128
+                }
+                val y1192 = 1192 * y
+                val r = (y1192 + 1634 * v).coerceIn(0, 262143)
+                val g = (y1192 - 833 * v - 400 * u).coerceIn(0, 262143)
+                val b = (y1192 + 2066 * u).coerceIn(0, 262143)
+                val red = ((r shl 6) and 0xff0000)
+                val green = ((g shr 2) and 0xff00)
+                val blue = (b shr 10) and 0xff
+                output[pixel++] = (0xff shl 24) or red or green or blue
+            }
+        }
+        return Bitmap.createBitmap(output, width, height, Bitmap.Config.ARGB_8888)
     }
 
     private fun decodeOriented(bytes: ByteArray): Bitmap {
