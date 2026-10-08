@@ -15,7 +15,7 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 ## Try the Android demo
 
-[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `bcc0580fe80a131a947194c875ef9700dd142e07a8ecae03bd37de963d54910b`.
+[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `f832c79d01aa0ba408e894f04d165315554f8719a674a67ce87b307078fc85ca`.
 
 For a seven-day trial in your own app, [contact Mobile ML Labs on WhatsApp](https://wa.me/923318421757?text=Hi%20Mobile%20ML%20Labs%2C%20I%20want%20to%20evaluate%20MML%20Face%20SDK.%0A%0AName%20%2F%20company%3A%0APlatform%20(Android%20or%20iOS)%3A%0APackage%20name%20%2F%20bundle%20ID%3A%0AApp%20or%20website%20link%3A%0AIntended%20use%3A) with your platform and exact Android package name or iOS bundle identifier.
 

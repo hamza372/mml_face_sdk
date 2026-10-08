@@ -34,6 +34,8 @@ class _DemoState extends State<Demo> {
   MmlFaceSdk? sdk;
   FaceTemplate? template;
   String status = 'Not initialized';
+  bool ready = false;
+  bool busy = true;
 
   @override
   void initState() {
@@ -54,24 +56,47 @@ class _DemoState extends State<Demo> {
       if (token != null) {
         await sdk!.initialize(license: token);
       } else if (demoActivationKey.isNotEmpty) {
-        setState(() => status = 'Preparing on-device demo…');
+        setState(() {
+          status = 'Preparing on-device demo…';
+          busy = true;
+        });
         await _activateWithCode(demoActivationKey);
       }
-      if (saved != null) template = FaceTemplate.fromJson(jsonDecode(saved));
-      setState(
-        () => status = token == null && demoActivationKey.isEmpty
-            ? 'Activation required'
-            : 'Ready',
-      );
+      if (saved != null) {
+        try {
+          template = FaceTemplate.fromJson(jsonDecode(saved));
+        } catch (_) {
+          await storage.delete(key: 'template');
+        }
+      }
+      setState(() {
+        ready = token != null || demoActivationKey.isNotEmpty;
+        busy = false;
+        status = ready
+            ? template == null
+                  ? 'Ready — enroll a face to begin'
+                  : 'Ready — enrolled face loaded'
+            : 'Activation required';
+      });
     } catch (_) {
       if (demoActivationKey.isNotEmpty) {
         try {
           await _activateWithCode(demoActivationKey);
-          setState(() => status = 'Ready');
+          setState(() {
+            ready = true;
+            busy = false;
+            status = template == null
+                ? 'Ready — enroll a face to begin'
+                : 'Ready — enrolled face loaded';
+          });
           return;
         } catch (_) {}
       }
-      setState(() => status = 'Activation required');
+      setState(() {
+        ready = false;
+        busy = false;
+        status = 'Activation required';
+      });
     }
   }
 
@@ -85,11 +110,21 @@ class _DemoState extends State<Demo> {
   }
 
   Future<void> _activate() async {
+    if (busy) return;
+    setState(() {
+      busy = true;
+      status = 'Activating licence and installing models…';
+    });
     try {
       await _activateWithCode(code.text.trim());
-      setState(() => status = 'Lifetime licence activated');
+      setState(() {
+        ready = true;
+        status = 'Licence activated — enroll a face to begin';
+      });
     } catch (_) {
       setState(() => status = 'Activation failed');
+    } finally {
+      setState(() => busy = false);
     }
   }
 
@@ -99,24 +134,50 @@ class _DemoState extends State<Demo> {
     imageQuality: 95,
   );
   Future<void> _enroll() async {
+    if (!ready || busy) return;
+    setState(() {
+      busy = true;
+      status = 'Capture a clear front-facing enrollment photo';
+    });
     final file = await _capture();
-    if (file == null) return;
+    if (file == null) {
+      setState(() {
+        busy = false;
+        status = template == null
+            ? 'Enrollment cancelled — enroll a face to begin'
+            : 'Enrollment cancelled — existing face kept';
+      });
+      return;
+    }
     try {
-      template = await sdk!.createTemplate(await file.readAsBytes());
-      await storage.write(key: 'template', value: jsonEncode(template));
-      setState(() => status = 'Template enrolled locally');
+      setState(() => status = 'Creating local face template…');
+      final enrolled = await sdk!.createTemplate(await file.readAsBytes());
+      await storage.write(key: 'template', value: jsonEncode(enrolled));
+      setState(() {
+        template = enrolled;
+        status = 'Enrollment complete — recognition is ready';
+      });
     } on FaceSdkException catch (e) {
-      setState(() => status = e.code.name);
+      setState(() => status = 'Enrollment failed: ${_friendlyError(e.code)}');
+    } finally {
+      setState(() => busy = false);
     }
   }
 
   Future<void> _compare(bool live) async {
-    if (template == null) {
-      setState(() => status = 'Enroll first');
+    if (!ready || busy || template == null) return;
+    setState(() {
+      busy = true;
+      status = live ? 'Capture liveness sample' : 'Capture recognition photo';
+    });
+    final file = await _capture();
+    if (file == null) {
+      setState(() {
+        busy = false;
+        status = 'Capture cancelled — enrollment is still ready';
+      });
       return;
     }
-    final file = await _capture();
-    if (file == null) return;
     try {
       final r = live
           ? await sdk!.verify(
@@ -133,9 +194,21 @@ class _DemoState extends State<Demo> {
             : '${r.matched ? 'MATCH' : 'NO MATCH'} similarity=${r.similarity?.toStringAsFixed(3)}',
       );
     } on FaceSdkException catch (e) {
-      setState(() => status = e.code.name);
+      setState(() => status = _friendlyError(e.code));
+    } finally {
+      setState(() => busy = false);
     }
   }
+
+  String _friendlyError(FaceSdkError error) => switch (error) {
+    FaceSdkError.noFace => 'No face detected. Try again in good light.',
+    FaceSdkError.multipleFaces => 'Keep only one face in the frame.',
+    FaceSdkError.faceTooSmall => 'Move closer to the camera.',
+    FaceSdkError.faceNotFrontal => 'Look directly at the camera.',
+    FaceSdkError.poorQuality => 'Image quality is too low. Try again.',
+    FaceSdkError.licenseInvalid => 'The SDK is not ready yet.',
+    _ => error.name,
+  };
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -144,7 +217,9 @@ class _DemoState extends State<Demo> {
       padding: const EdgeInsets.all(20),
       child: ListView(
         children: [
-          Text(status),
+          if (busy) const LinearProgressIndicator(),
+          if (busy) const SizedBox(height: 12),
+          Text(status, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 20),
           if (demoActivationKey.isEmpty) ...[
             TextField(
@@ -153,23 +228,41 @@ class _DemoState extends State<Demo> {
                 labelText: 'Customer app licence key',
               ),
             ),
-            FilledButton(onPressed: _activate, child: const Text('Activate')),
+            FilledButton(
+              onPressed: busy ? null : _activate,
+              child: const Text('Activate'),
+            ),
           ] else
             const Text(
               'Demo access is configured automatically. Face images and templates stay on this device.',
             ),
           const Divider(),
+          Text(
+            template == null
+                ? 'Step 1 of 2 · No face enrolled'
+                : 'Step 1 complete · Face enrolled on this device',
+          ),
+          const SizedBox(height: 8),
           FilledButton(
-            onPressed: _enroll,
-            child: const Text('Enroll / replace template'),
+            onPressed: ready && !busy ? _enroll : null,
+            child: Text(
+              template == null ? '1. Enroll face' : 'Replace enrolled face',
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text('Step 2 · Compare with the enrolled face'),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: ready && !busy && template != null
+                ? () => _compare(false)
+                : null,
+            child: const Text('2. Recognition only'),
           ),
           OutlinedButton(
-            onPressed: () => _compare(false),
-            child: const Text('Recognition only'),
-          ),
-          OutlinedButton(
-            onPressed: () => _compare(true),
-            child: const Text('Liveness + verification'),
+            onPressed: ready && !busy && template != null
+                ? () => _compare(true)
+                : null,
+            child: const Text('2. Liveness + verification'),
           ),
           const Text(
             'For liveness, capture four consecutive samples. Production apps should use a guided native frame stream.',

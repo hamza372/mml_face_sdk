@@ -3,6 +3,8 @@ package com.mml.mml_face_sdk
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
@@ -13,6 +15,7 @@ import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.io.File
+import java.io.ByteArrayInputStream
 import kotlin.math.*
 
 internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
@@ -58,7 +61,7 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     }
 
     private fun validatedFace(bytes: ByteArray): Pair<Bitmap, Face> {
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("invalidImage")
+        val bitmap = decodeOriented(bytes)
         val faces = Tasks.await(detector.process(InputImage.fromBitmap(bitmap, 0)))
         if (faces.isEmpty()) { bitmap.recycle(); error("noFace") }
         if (faces.size != 1) { bitmap.recycle(); error("multipleFaces") }
@@ -66,6 +69,20 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
         if (ratio < .20) { bitmap.recycle(); error("faceTooSmall") }
         if (abs(face.headEulerAngleY) > 20 || abs(face.headEulerAngleZ) > 20) { bitmap.recycle(); error("faceNotFrontal") }
         return bitmap to face
+    }
+
+    private fun decodeOriented(bytes: ByteArray): Bitmap {
+        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("invalidImage")
+        val exif = runCatching { ExifInterface(ByteArrayInputStream(bytes)) }.getOrNull() ?: return decoded
+        val rotation = exif.rotationDegrees
+        val flipped = exif.isFlipped
+        if (rotation == 0 && !flipped) return decoded
+        val matrix = Matrix()
+        if (flipped) matrix.postScale(-1f, 1f)
+        if (rotation != 0) matrix.postRotate(rotation.toFloat())
+        val oriented = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+        if (oriented !== decoded) decoded.recycle()
+        return oriented
     }
 
     private fun quality(image: Bitmap, face: Face) = mapOf<String, Any>("faceRatio" to face.boundingBox.width().toDouble() / min(image.width, image.height), "yaw" to face.headEulerAngleY.toDouble(), "roll" to face.headEulerAngleZ.toDouble())

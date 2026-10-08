@@ -1,3 +1,9 @@
+## 0.1.1-dev.3
+
+* Fixed the demo enrollment flow so face actions remain disabled until activation and model installation finish.
+* Added explicit enrollment state, clearer capture feedback, and guarded recognition/liveness actions until a template exists.
+* Normalized Android camera JPEG orientation from EXIF metadata before face detection.
+
 ## 0.1.1-dev.2
 
 * Added app-bound seven-day trials that begin on first activation.
