@@ -2,7 +2,7 @@
 
 Production-oriented Flutter plugin for offline, on-device 1:1 face comparison and passive liveness on Android and iOS. Native code performs face detection, five-landmark alignment, TensorFlow Lite inference, quality gating, and decision state. Model weights are not published with this package: activation installs a privately delivered, per-activation encrypted model pack into app-private storage. The service never receives images, video, embeddings, or templates.
 
-> Status: pre-release integration baseline. The bundled thresholds (`0.70` similarity and `0.75` liveness) reproduce the source application behavior. They are **not independently validated operating points**. Calibrate against representative users, devices, capture conditions, and attack media before production.
+> Status: pre-release integration baseline. The bundled thresholds (`0.75` similarity and `0.75` liveness) are compatibility defaults. They are **not independently validated operating points**. Calibrate against representative users, devices, capture conditions, and attack media before production.
 
 ## Capabilities
 
@@ -15,7 +15,7 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 ## Try the Android demo
 
-[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `9f93757980d2f7f0d824bf3b35c5b38ae1486128e90118840082f0bd64d3e601`.
+[Download the signed demo APK](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.apk). It activates its demo-only licence automatically and is restricted to the demo package identifier. SHA-256: `48660a7700e181d451bca3a1109d78c3caee3f28d21c9d43650de53ebdb17458`.
 
 For a seven-day trial in your own app, [contact Mobile ML Labs on WhatsApp](https://wa.me/923318421757?text=Hi%20Mobile%20ML%20Labs%2C%20I%20want%20to%20evaluate%20MML%20Face%20SDK.%0A%0AName%20%2F%20company%3A%0APlatform%20(Android%20or%20iOS)%3A%0APackage%20name%20%2F%20bundle%20ID%3A%0AApp%20or%20website%20link%3A%0AIntended%20use%3A) with your platform and exact Android package name or iOS bundle identifier.
 

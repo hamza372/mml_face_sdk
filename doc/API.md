@@ -1,6 +1,6 @@
 # API reference
 
-- `MmlFaceSdk(publicLicenseKey, matchThreshold: 0.70)`: stateful SDK client. The threshold is a compatibility default requiring calibration.
+- `MmlFaceSdk(publicLicenseKey, matchThreshold: 0.75)`: stateful SDK client. The threshold is a compatibility default requiring calibration.
 - `activate(endpoint, activationCode)`: one online activation; validates the signed token, downloads the private encrypted model pack, verifies it, and installs it in app-private storage.
 - `initialize(license)`: verifies the trial or lifetime licence signature, expiry, app ID, installation binding, and presence of the installed model pack offline.
 - `createTemplate(encodedImage)`: quality-gates one face and returns an L2-normalized, model-versioned embedding.

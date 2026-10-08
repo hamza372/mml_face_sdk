@@ -1,3 +1,9 @@
+## 0.1.1-dev.5
+
+* Raised the default face-similarity match threshold from 0.70 to 0.75.
+* Added progressive live distance guidance with an animated arrow and proximity bar in the demo.
+* Removed face-guide shapes from the recognition and liveness camera screens.
+
 ## 0.1.1-dev.4
 
 * Rebuilt the demo with an embedded camera experience for registration and continuous verification.

@@ -20,7 +20,7 @@ export 'src/types.dart';
 class MmlFaceSdk {
   MmlFaceSdk({
     required this.publicLicenseKey,
-    this.matchThreshold = 0.70,
+    this.matchThreshold = 0.75,
     LicenseClock? clock,
   }) : _clock = clock ?? const SystemLicenseClock();
 

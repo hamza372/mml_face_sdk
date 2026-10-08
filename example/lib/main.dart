@@ -107,6 +107,7 @@ class _DemoHomeState extends State<DemoHome> {
 
   Future<void> _start() async {
     sdk = MmlFaceSdk(
+      matchThreshold: .75,
       publicLicenseKey: SimplePublicKey(
         base64Url.decode(base64Url.normalize(publicKeyB64)),
         type: KeyPairType.ed25519,
@@ -719,6 +720,7 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
   Color statusColor = const Color(0xff31e3c0);
   double? similarity;
   double? liveness;
+  double? distanceRatio;
   int livenessSamples = 0;
   bool processingFrame = false;
 
@@ -734,9 +736,7 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
       if (!mounted) return;
       setState(() {
         cameraReady = true;
-        message = widget.requireLiveness
-            ? 'Hold still inside the guide'
-            : 'Looking for ${widget.profile.name}…';
+        message = 'Place your face in front of the camera';
       });
       if (Platform.isAndroid) {
         await controller!.startImageStream((frame) {
@@ -780,7 +780,10 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
       if (!mounted || !active) return;
       await _applyResult(result);
     } on FaceSdkException catch (error) {
-      _showFrameError(_friendlyError(error.code));
+      _showFrameError(
+        _friendlyError(error.code),
+        distanceRatio: error.code == FaceSdkError.faceTooSmall ? .15 : null,
+      );
     } catch (_) {
       _showFrameError('Camera frame unavailable — retrying…');
     }
@@ -806,7 +809,10 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
         if (!mounted || !active) return;
         if (await _applyResult(result)) return;
       } on FaceSdkException catch (error) {
-        _showFrameError(_friendlyError(error.code));
+        _showFrameError(
+          _friendlyError(error.code),
+          distanceRatio: error.code == FaceSdkError.faceTooSmall ? .15 : null,
+        );
       } catch (_) {
         _showFrameError('Camera frame unavailable — retrying…');
       }
@@ -823,12 +829,19 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
         await _showSuccess(result);
         return true;
       }
+      final guidance = _distanceGuidance(
+        result.quality.faceRatio,
+        requiredRatio: .60,
+      );
       setState(() {
-        message = 'Face not recognized — keep looking at the camera';
+        distanceRatio = guidance == null ? null : result.quality.faceRatio;
+        message =
+            guidance ?? 'Face not recognized — look directly at the camera';
         statusColor = const Color(0xffffb44b);
       });
     } else if (result.spoofLatched) {
       setState(() {
+        distanceRatio = null;
         message = 'Spoof detected — present a live face';
         statusColor = const Color(0xffff5b6e);
         livenessSamples = 0;
@@ -841,19 +854,26 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
         return true;
       }
       setState(() {
+        distanceRatio = null;
         message = 'Live face confirmed, but not recognized';
         statusColor = const Color(0xffffb44b);
         livenessSamples = 0;
       });
       await widget.sdk.resetLiveness();
     } else if (result.livenessScore == null) {
+      final guidance = _distanceGuidance(
+        result.quality.faceRatio,
+        requiredRatio: .72,
+      );
       setState(() {
-        message = 'Move closer and keep your full face in the guide';
+        distanceRatio = guidance == null ? null : result.quality.faceRatio;
+        message = guidance ?? 'Hold still — checking liveness';
         statusColor = const Color(0xffffb44b);
       });
     } else {
       livenessSamples = math.min(4, livenessSamples + 1);
       setState(() {
+        distanceRatio = null;
         message = livenessSamples < 4
             ? 'Checking liveness · $livenessSamples of 4'
             : 'Liveness not confirmed — keep a live face steady';
@@ -865,9 +885,10 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
     return false;
   }
 
-  void _showFrameError(String value) {
+  void _showFrameError(String value, {double? distanceRatio}) {
     if (!mounted || !active) return;
     setState(() {
+      this.distanceRatio = distanceRatio;
       message = value;
       statusColor = const Color(0xffffb44b);
     });
@@ -896,6 +917,14 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
     controller: controller,
     ready: cameraReady,
     guideColor: statusColor,
+    showGuide: false,
+    overlay: distanceRatio == null
+        ? null
+        : _DistancePrompt(
+            message: message,
+            progress: (distanceRatio! / (widget.requireLiveness ? .72 : .60))
+                .clamp(0.0, 1.0),
+          ),
     footer: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -907,30 +936,31 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: statusColor,
-                  boxShadow: [BoxShadow(color: statusColor, blurRadius: 10)],
-                ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position:
+                    Tween<Offset>(
+                      begin: const Offset(0, .22),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                    ),
+                child: child,
               ),
-              const SizedBox(width: 9),
-              Flexible(
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+            ),
+            child: Text(
+              message,
+              key: ValueKey(message),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
               ),
-            ],
+            ),
           ),
           if (similarity != null || liveness != null) ...[
             const SizedBox(height: 14),
@@ -1079,6 +1109,8 @@ class _CameraShell extends StatelessWidget {
     required this.ready,
     required this.guideColor,
     required this.footer,
+    this.showGuide = true,
+    this.overlay,
   });
 
   final String title;
@@ -1086,6 +1118,8 @@ class _CameraShell extends StatelessWidget {
   final bool ready;
   final Color guideColor;
   final Widget footer;
+  final bool showGuide;
+  final Widget? overlay;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -1099,9 +1133,17 @@ class _CameraShell extends StatelessWidget {
           const Center(
             child: CircularProgressIndicator(color: Color(0xff19c5b6)),
           ),
-        if (ready)
+        if (ready && showGuide)
           IgnorePointer(
             child: CustomPaint(painter: _FaceGuidePainter(guideColor)),
+          ),
+        if (ready && overlay != null)
+          Align(
+            alignment: const Alignment(0, .12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: overlay,
+            ),
           ),
         SafeArea(
           child: Padding(
@@ -1134,6 +1176,93 @@ class _CameraShell extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _DistancePrompt extends StatefulWidget {
+  const _DistancePrompt({required this.message, required this.progress});
+
+  final String message;
+  final double progress;
+
+  @override
+  State<_DistancePrompt> createState() => _DistancePromptState();
+}
+
+class _DistancePromptState extends State<_DistancePrompt> {
+  bool pulse = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => pulse = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+    decoration: BoxDecoration(
+      color: const Color(0xe60a1723),
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: const [
+        BoxShadow(color: Colors.black45, blurRadius: 24, offset: Offset(0, 8)),
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedScale(
+          scale: pulse ? 1.18 : .88,
+          duration: const Duration(milliseconds: 650),
+          curve: Curves.easeInOut,
+          onEnd: () {
+            if (mounted) setState(() => pulse = !pulse);
+          },
+          child: const Icon(
+            Icons.keyboard_double_arrow_up_rounded,
+            color: Color(0xffffc34d),
+            size: 46,
+          ),
+        ),
+        const SizedBox(height: 4),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Text(
+            widget.message,
+            key: ValueKey(widget.message),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              height: 1.2,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOut,
+            tween: Tween<double>(begin: 0, end: widget.progress),
+            builder: (context, value, _) => LinearProgressIndicator(
+              minHeight: 9,
+              value: value,
+              backgroundColor: Colors.white24,
+              valueColor: const AlwaysStoppedAnimation(Color(0xffffc34d)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 7),
+        const Text(
+          'Move toward the phone camera',
+          style: TextStyle(color: Colors.white70, fontSize: 12),
         ),
       ],
     ),
@@ -1454,10 +1583,18 @@ int _rotationDegrees(CameraController controller) {
       : (sensor - deviceRotation + 360) % 360;
 }
 
+String? _distanceGuidance(double faceRatio, {required double requiredRatio}) {
+  if (faceRatio < .28) return 'Face detected — move much closer';
+  if (faceRatio < .42) return 'Getting closer — keep moving toward camera';
+  if (faceRatio < .58) return 'Good — move a little closer';
+  if (faceRatio < requiredRatio) return 'Almost there — just a little closer';
+  return null;
+}
+
 String _friendlyError(FaceSdkError error) => switch (error) {
-  FaceSdkError.noFace => 'No face detected — center your face in the guide',
+  FaceSdkError.noFace => 'No face detected — look at the camera',
   FaceSdkError.multipleFaces => 'Only one face can be visible',
-  FaceSdkError.faceTooSmall => 'Move closer to the camera',
+  FaceSdkError.faceTooSmall => 'Face detected — move much closer',
   FaceSdkError.faceNotFrontal => 'Look directly at the camera',
   FaceSdkError.landmarksMissing =>
     'Face details are unclear — improve lighting',
