@@ -1,3 +1,9 @@
+## 0.1.1-dev.2
+
+* Added app-bound seven-day trials that begin on first activation.
+* Added private CLI tooling to create, list, and disable trial or lifetime keys.
+* Added a direct-launch Android demonstration build and public download documentation.
+
 ## 0.1.1-dev.1
 
 * Renamed the package and public API to `mml_face_sdk` and `MmlFaceSdk`.

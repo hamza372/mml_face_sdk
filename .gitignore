@@ -34,5 +34,6 @@ migrate_working_dir/
 /example/android/.kotlin/
 /worker/node_modules/
 /worker/.wrangler/
+/.wrangler/
 /work/
 /outputs/

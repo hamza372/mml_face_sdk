@@ -8,6 +8,8 @@ const publicKeyBase64 = 'vJZyhTYJIS4JWop8tIlY1Juyzpyv434M_BUQhgHzgDY';
 const expectedPackHash = 'd2387b95b294fcbb0035be383a6a301065c8211c8ece9bcc7ecbd780f3be3e50';
 const activationCode = `MML-TEST-${randomBytes(24).toString('base64url')}`;
 const codeHash = sha256(activationCode);
+const trialCode = `MML-TRIAL-TEST-${randomBytes(24).toString('base64url')}`;
+const trialHash = sha256(trialCode);
 const grantHashes = [];
 
 function sha256(value) {
@@ -29,15 +31,15 @@ function executeSql(command) {
   }
 }
 
-async function activate(appId, deviceId) {
+async function activate(appId, deviceId, code = activationCode) {
   return fetch(`${workerUrl}/v1/activate`, {
     method: 'POST',
     headers: {'content-type': 'application/json'},
-    body: JSON.stringify({activationCode, appId, deviceId, platform: 'android'}),
+    body: JSON.stringify({activationCode: code, appId, deviceId, platform: 'android'}),
   });
 }
 
-async function assertLicense(token, appId, deviceId) {
+async function assertLicense(token, appId, deviceId, expectedType = 'lifetime') {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error('Malformed licence token.');
   const header = JSON.parse(decodeBase64Url(parts[0]));
@@ -45,8 +47,14 @@ async function assertLicense(token, appId, deviceId) {
   if (header.alg !== 'EdDSA' || header.typ !== 'MML-LIC') {
     throw new Error('Unexpected licence header.');
   }
-  if (payload.appId !== appId || payload.deviceId !== deviceId || payload.perpetual !== true) {
+  if (payload.appId !== appId || payload.deviceId !== deviceId) {
+    throw new Error('Unexpected licence binding.');
+  }
+  if (expectedType === 'lifetime' && payload.perpetual !== true) {
     throw new Error('Unexpected lifetime licence claims.');
+  }
+  if (expectedType === 'trial' && (payload.perpetual === true || payload.exp - payload.iat > 7 * 24 * 60 * 60 || payload.exp <= payload.iat)) {
+    throw new Error('Unexpected trial licence claims.');
   }
   const publicKey = await crypto.subtle.importKey(
     'raw',
@@ -91,7 +99,7 @@ async function downloadAndVerifyModelPack(modelPack) {
 }
 
 try {
-  executeSql(`INSERT INTO activation_codes(code_hash) VALUES ('${codeHash}')`);
+  executeSql(`INSERT INTO activation_codes(code_hash) VALUES ('${codeHash}'); INSERT INTO activation_codes(code_hash, allowed_app_id, allowed_platform, license_type, trial_days) VALUES ('${trialHash}', 'com.mobilemllabs.trialtest', 'android', 'trial', 7)`);
 
   const first = await activate('com.mobilemllabs.smoketest', 'device-one');
   if (first.status !== 200) {
@@ -110,10 +118,16 @@ try {
   const wrongApp = await activate('com.example.other', 'device-three');
   if (wrongApp.status !== 403) throw new Error('The app-bound key activated a different app.');
 
-  console.log('Remote smoke test passed: signature, lifetime claims, app binding, reusable app key, encrypted model download, checksum, and one-time grant.');
+  const trial = await activate('com.mobilemllabs.trialtest', 'trial-device', trialCode);
+  if (trial.status !== 200) throw new Error(`Trial activation returned ${trial.status}: ${await trial.text()}`);
+  const trialBody = await trial.json();
+  await assertLicense(trialBody.license, 'com.mobilemllabs.trialtest', 'trial-device', 'trial');
+  grantHashes.push(sha256(new URL(trialBody.modelPack.url).pathname.split('/').pop()));
+
+  console.log('Remote smoke test passed: signatures, lifetime and trial claims, app/platform binding, reusable app key, encrypted model download, checksum, and one-time grant.');
 } finally {
   const grants = grantHashes.length
     ? `DELETE FROM model_grants WHERE grant_hash IN (${grantHashes.map((value) => `'${value}'`).join(',')});`
     : '';
-  executeSql(`${grants} DELETE FROM license_activations WHERE code_hash='${codeHash}'; DELETE FROM activation_codes WHERE code_hash='${codeHash}';`);
+  executeSql(`${grants} DELETE FROM license_activations WHERE code_hash IN ('${codeHash}', '${trialHash}'); DELETE FROM activation_codes WHERE code_hash IN ('${codeHash}', '${trialHash}');`);
 }

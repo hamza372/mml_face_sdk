@@ -17,8 +17,18 @@ class _DemoState extends State<Demo> {
   static const storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  static const publicKeyB64 = String.fromEnvironment('MML_LICENSE_PUBLIC_KEY');
-  static const activationUrl = String.fromEnvironment('MML_ACTIVATION_URL');
+  static const publicKeyB64 = String.fromEnvironment(
+    'MML_LICENSE_PUBLIC_KEY',
+    defaultValue: 'vJZyhTYJIS4JWop8tIlY1Juyzpyv434M_BUQhgHzgDY',
+  );
+  static const activationUrl = String.fromEnvironment(
+    'MML_ACTIVATION_URL',
+    defaultValue:
+        'https://mml-face-license.hamzaasif19974-69b.workers.dev/v1/activate',
+  );
+  static const demoActivationKey = String.fromEnvironment(
+    'MML_DEMO_ACTIVATION_KEY',
+  );
   final code = TextEditingController();
   final picker = ImagePicker();
   MmlFaceSdk? sdk;
@@ -32,10 +42,6 @@ class _DemoState extends State<Demo> {
   }
 
   Future<void> _start() async {
-    if (publicKeyB64.isEmpty) {
-      setState(() => status = 'Set MML_LICENSE_PUBLIC_KEY.');
-      return;
-    }
     sdk = MmlFaceSdk(
       publicLicenseKey: SimplePublicKey(
         base64Url.decode(base64Url.normalize(publicKeyB64)),
@@ -45,21 +51,42 @@ class _DemoState extends State<Demo> {
     final token = await storage.read(key: 'license');
     final saved = await storage.read(key: 'template');
     try {
-      if (token != null) await sdk!.initialize(license: token);
+      if (token != null) {
+        await sdk!.initialize(license: token);
+      } else if (demoActivationKey.isNotEmpty) {
+        setState(() => status = 'Preparing on-device demo…');
+        await _activateWithCode(demoActivationKey);
+      }
       if (saved != null) template = FaceTemplate.fromJson(jsonDecode(saved));
-      setState(() => status = token == null ? 'Activation required' : 'Ready');
+      setState(
+        () => status = token == null && demoActivationKey.isEmpty
+            ? 'Activation required'
+            : 'Ready',
+      );
     } catch (_) {
+      if (demoActivationKey.isNotEmpty) {
+        try {
+          await _activateWithCode(demoActivationKey);
+          setState(() => status = 'Ready');
+          return;
+        } catch (_) {}
+      }
       setState(() => status = 'Activation required');
     }
   }
 
+  Future<String> _activateWithCode(String activationCode) async {
+    final token = await sdk!.activate(
+      endpoint: Uri.parse(activationUrl),
+      activationCode: activationCode,
+    );
+    await storage.write(key: 'license', value: token);
+    return token;
+  }
+
   Future<void> _activate() async {
     try {
-      final token = await sdk!.activate(
-        endpoint: Uri.parse(activationUrl),
-        activationCode: code.text.trim(),
-      );
-      await storage.write(key: 'license', value: token);
+      await _activateWithCode(code.text.trim());
       setState(() => status = 'Lifetime licence activated');
     } catch (_) {
       setState(() => status = 'Activation failed');
@@ -119,13 +146,18 @@ class _DemoState extends State<Demo> {
         children: [
           Text(status),
           const SizedBox(height: 20),
-          TextField(
-            controller: code,
-            decoration: const InputDecoration(
-              labelText: 'Customer app licence key',
+          if (demoActivationKey.isEmpty) ...[
+            TextField(
+              controller: code,
+              decoration: const InputDecoration(
+                labelText: 'Customer app licence key',
+              ),
             ),
-          ),
-          FilledButton(onPressed: _activate, child: const Text('Activate')),
+            FilledButton(onPressed: _activate, child: const Text('Activate')),
+          ] else
+            const Text(
+              'Demo access is configured automatically. Face images and templates stay on this device.',
+            ),
           const Divider(),
           FilledButton(
             onPressed: _enroll,

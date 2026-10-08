@@ -1,16 +1,30 @@
-# mml_face_sdk_example
+# MML Face SDK example
 
-Demonstrates how to use the mml_face_sdk plugin.
+This app demonstrates activation, model installation, local enrollment,
+one-to-one face matching, and passive liveness. Biometric processing stays on
+the device.
 
-## Getting Started
+## Customer evaluation
 
-This project is a starting point for a Flutter application.
+Run without a bundled activation key and enter the seven-day trial key supplied
+for your exact Android package name or iOS bundle identifier:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run \
+  --dart-define=MML_LICENSE_PUBLIC_KEY=PUBLIC_KEY \
+  --dart-define=MML_ACTIVATION_URL=ACTIVATION_URL
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Building the public demo
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The downloadable demo is built separately with a demo-only activation key that
+is restricted to this example application's package identifier:
+
+```sh
+flutter build apk --release \
+  --dart-define=MML_DEMO_ACTIVATION_KEY=DEMO_ONLY_KEY
+```
+
+Never commit commercial or demo activation keys. For production integration,
+store the returned signed licence token in platform secure storage and follow
+the package's integration guide.

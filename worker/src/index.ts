@@ -7,6 +7,14 @@ interface Env {
   MODEL_PACK_SHA256: string;
 }
 type RequestBody = { activationCode?: string; appId?: string; deviceId?: string; platform?: string };
+type ActivationCodeRow = {
+  allowed_app_id: string | null;
+  allowed_platform: string | null;
+  enabled: number;
+  license_type: 'trial' | 'lifetime';
+  trial_days: number | null;
+  trial_started_at: number | null;
+};
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {status, headers: {'content-type': 'application/json', 'cache-control': 'no-store'}});
 const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
@@ -33,16 +41,25 @@ export default {
     }
     if (!/^[a-f0-9]{64}$/.test(env.MODEL_PACK_SHA256) || !await env.MODEL_BUCKET.head(env.MODEL_PACK_OBJECT)) return json({error: 'model_pack_unavailable'}, 503);
     const codeHash = await hash(body.activationCode);
-    const row = await env.LICENSE_DB.prepare('SELECT allowed_app_id, enabled FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<{allowed_app_id: string | null; enabled: number}>();
-    if (!row || row.enabled !== 1 || (row.allowed_app_id !== null && row.allowed_app_id !== body.appId)) return json({error: 'activation_rejected'}, 403);
+    const row = await env.LICENSE_DB.prepare('SELECT allowed_app_id, allowed_platform, enabled, license_type, trial_days, trial_started_at FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<ActivationCodeRow>();
+    if (!row || row.enabled !== 1 || (row.allowed_app_id !== null && row.allowed_app_id !== body.appId) || (row.allowed_platform !== null && row.allowed_platform !== body.platform)) return json({error: 'activation_rejected'}, 403);
     const now = Math.floor(Date.now() / 1000), licenseId = crypto.randomUUID(), grant = randomToken(32), modelKey = randomToken(32);
-    const binding = await env.LICENSE_DB.prepare('UPDATE activation_codes SET allowed_app_id=COALESCE(allowed_app_id, ?), redeemed_at=COALESCE(redeemed_at, ?), license_id=?, app_id=?, device_id=? WHERE code_hash=? AND enabled=1 AND (allowed_app_id IS NULL OR allowed_app_id=?)').bind(body.appId, now, licenseId, body.appId, body.deviceId, codeHash, body.appId).run();
+    const binding = await env.LICENSE_DB.prepare("UPDATE activation_codes SET allowed_app_id=COALESCE(allowed_app_id, ?), redeemed_at=COALESCE(redeemed_at, ?), trial_started_at=CASE WHEN license_type='trial' THEN COALESCE(trial_started_at, ?) ELSE trial_started_at END, license_id=?, app_id=?, device_id=? WHERE code_hash=? AND enabled=1 AND (allowed_app_id IS NULL OR allowed_app_id=?) AND (allowed_platform IS NULL OR allowed_platform=?)").bind(body.appId, now, now, licenseId, body.appId, body.deviceId, codeHash, body.appId, body.platform).run();
     if (binding.meta.changes !== 1) return json({error: 'activation_rejected'}, 403);
+    const bound = await env.LICENSE_DB.prepare('SELECT license_type, trial_days, trial_started_at FROM activation_codes WHERE code_hash = ?').bind(codeHash).first<Pick<ActivationCodeRow, 'license_type' | 'trial_days' | 'trial_started_at'>>();
+    if (!bound) return json({error: 'activation_rejected'}, 403);
+    const isTrial = bound.license_type === 'trial';
+    const trialDays = bound.trial_days ?? 0;
+    const expiresAt = isTrial && bound.trial_started_at !== null ? bound.trial_started_at + trialDays * 24 * 60 * 60 : null;
+    if (isTrial && (trialDays < 1 || trialDays > 7 || expiresAt === null || now >= expiresAt)) return json({error: 'trial_expired'}, 403);
     await env.LICENSE_DB.batch([
       env.LICENSE_DB.prepare('INSERT INTO license_activations(license_id, code_hash, app_id, device_id, platform, activated_at) VALUES(?, ?, ?, ?, ?, ?)').bind(licenseId, codeHash, body.appId, body.deviceId, body.platform, now),
       env.LICENSE_DB.prepare('INSERT INTO model_grants(grant_hash, model_key, expires_at) VALUES(?, ?, ?)').bind(await hash(grant), modelKey, now + 15 * 60),
     ]);
-    const header = encode({alg: 'EdDSA', typ: 'MML-LIC'}), payload = encode({jti: licenseId, appId: body.appId, deviceId: body.deviceId, platform: body.platform, iat: now, perpetual: true});
+    const header = encode({alg: 'EdDSA', typ: 'MML-LIC'});
+    const payload = encode(isTrial
+      ? {jti: licenseId, appId: body.appId, deviceId: body.deviceId, platform: body.platform, iat: now, exp: expiresAt}
+      : {jti: licenseId, appId: body.appId, deviceId: body.deviceId, platform: body.platform, iat: now, perpetual: true});
     const signature = await crypto.subtle.sign('Ed25519', key, new TextEncoder().encode(`${header}.${payload}`));
     return json({
       license: `${header}.${payload}.${b64url(new Uint8Array(signature))}`,
