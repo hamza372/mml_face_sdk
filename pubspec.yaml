@@ -1,7 +1,7 @@
 name: mml_face_sdk
 description: Offline, on-device 1:1 face verification and passive liveness SDK.
-version: 0.1.1-dev.6
-homepage: https://mobilemllabs.com/
+version: 0.1.1-dev.7
+homepage: https://mobilemllabs.com/face-sdk
 repository: https://github.com/hamza372/mml_face_sdk
 issue_tracker: https://github.com/hamza372/mml_face_sdk/issues
 

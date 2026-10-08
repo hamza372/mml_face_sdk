@@ -1,3 +1,8 @@
+## 0.1.1-dev.7
+
+* Made the Face SDK product page the primary package homepage.
+* Replaced the shortened animated preview with a direct path to the complete demonstration recording.
+
 ## 0.1.1-dev.6
 
 * Added a recorded enrollment, replay-rejection, and live-verification demonstration to the package documentation.

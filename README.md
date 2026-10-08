@@ -6,9 +6,11 @@ Production-oriented Flutter plugin for offline, on-device 1:1 face comparison an
 
 ## See it in action
 
-[![MML Face SDK demonstration showing replay rejection followed by successful live verification](https://raw.githubusercontent.com/hamza372/mml_face_sdk/main/assets/demo/mml-face-sdk-demo.gif)](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4)
+[![Watch the complete MML Face SDK demonstration](https://raw.githubusercontent.com/hamza372/mml_face_sdk/main/assets/demo/mml-face-sdk-demo-poster.jpg)](https://mobilemllabs.com/face-sdk)
 
-The demonstration shows local enrollment, successful live verification, rejection of a presentation/replay attempt, and successful verification when the live user returns. [Watch the full-quality MP4](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4).
+**[Watch the complete 36-second demonstration on the MML Face SDK product page](https://mobilemllabs.com/face-sdk)** or [open the full-quality MP4 directly](https://github.com/hamza372/mml_face_sdk/releases/latest/download/mml-face-sdk-demo.mp4).
+
+The complete recording shows local enrollment, successful live verification, rejection of a presentation/replay attempt, and successful verification when the live user returns.
 
 > Demonstration recorded on one Android device under controlled conditions. It is not an independent presentation-attack certification. Production deployments must validate thresholds and attack performance for their supported devices and environments.
 
@@ -59,4 +61,4 @@ The source attendance app is not a dependency and is not modified. This public p
 
 Support: [hamzaasif19974@gmail.com](mailto:hamzaasif19974@gmail.com)
 
-Website: [mobilemllabs.com](https://mobilemllabs.com/) · [Source and issues](https://github.com/hamza372/mml_face_sdk)
+Product page: [mobilemllabs.com/face-sdk](https://mobilemllabs.com/face-sdk) · [Source and issues](https://github.com/hamza372/mml_face_sdk)
