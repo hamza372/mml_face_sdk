@@ -1,3 +1,10 @@
+## 0.1.1-dev.9
+
+* Aligned the Android live verification session with the production app's tracked-face liveness flow.
+* Exposed native liveness readiness so pending samples are no longer presented as failures.
+* Kept spoof detection latched until the subject leaves the frame and continued recognition across verified live frames.
+* Made the Android demonstration activate automatically when run or installed, without asking for a customer key.
+
 ## 0.1.1-dev.8
 
 * Restored the autoplaying demonstration GIF to the GitHub and pub.dev README while retaining links to the complete recording.

@@ -20,7 +20,13 @@ import java.io.ByteArrayInputStream
 import kotlin.math.*
 
 internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
-    private val detector = FaceDetection.getClient(FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE).setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL).build())
+    private val detector = FaceDetection.getClient(
+        FaceDetectorOptions.Builder()
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+            .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
+            .enableTracking()
+            .build()
+    )
     private val arc = load(models.getValue("mobileFaceNetARCNET.tflite"))
     private val fas27 = load(models.getValue("minifas_v2_2.7_80.tflite"))
     private val fas40 = load(models.getValue("minifas_v1se_4.0_80.tflite"))
@@ -28,6 +34,7 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     private var lowRun = 0
     private var lowStarted = 0L
     private var spoofLatched = false
+    private var trackingId: Int? = null
 
     fun createTemplate(bytes: ByteArray): Map<String, Any> {
         val (bitmap, face) = validatedFace(bytes)
@@ -45,7 +52,15 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     }
 
     fun verifyFrame(nv21: ByteArray, width: Int, height: Int, rotationDegrees: Int, template: List<Double>, liveness: Boolean): Map<String, Any?> {
-        val (bitmap, face) = validatedFrame(nv21, width, height, rotationDegrees)
+        val (bitmap, face) = try {
+            validatedFrame(nv21, width, height, rotationDegrees)
+        } catch (error: Throwable) {
+            when (publicError(error)) {
+                "noFace", "multipleFaces" -> reset()
+                "faceTooSmall" -> clearWindow()
+            }
+            throw error
+        }
         return verifyBitmap(bitmap, face, template, liveness)
     }
 
@@ -53,24 +68,42 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
         try {
             val result = quality(bitmap, face).toMutableMap<String, Any?>()
             if (liveness) {
+                val currentTrackingId = face.trackingId
+                if (trackingId != null && currentTrackingId != null && trackingId != currentTrackingId) reset()
+                trackingId = currentTrackingId
                 if ((result["faceRatio"] as Double) < .72) {
-                    scores.clear(); lowRun = 0; lowStarted = 0
-                    result["livenessPassed"] = false; result["spoofLatched"] = spoofLatched
+                    clearWindow()
+                    result["livenessPassed"] = false
+                    result["livenessReady"] = false
+                    result["livenessSampleCount"] = 0
+                    result["spoofLatched"] = spoofLatched
                     return result
                 }
-                if (spoofLatched) return result + mapOf("livenessPassed" to false, "spoofLatched" to true)
+                if (spoofLatched) return result + mapOf(
+                    "livenessPassed" to false,
+                    "livenessReady" to (scores.size == 4),
+                    "livenessSampleCount" to scores.size,
+                    "spoofLatched" to true
+                )
                 val score = (fasScore(fas27, bitmap, face, 2.7) + fasScore(fas40, bitmap, face, 4.0)) / 2.0
                 scores.addLast(score); if (scores.size > 4) scores.removeFirst()
                 val now = System.currentTimeMillis()
                 if (score < .40) { if (lowRun == 0) lowStarted = now; lowRun++; if (lowRun >= 3 && now - lowStarted >= 600) spoofLatched = true } else { lowRun = 0; lowStarted = 0 }
                 val sorted = scores.sorted(); val median = if (sorted.size % 2 == 0) (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2 else sorted[sorted.size / 2]
-                result["livenessScore"] = median; result["spoofLatched"] = spoofLatched
+                result["livenessScore"] = median
+                result["livenessReady"] = scores.size == 4
+                result["livenessSampleCount"] = scores.size
+                result["spoofLatched"] = spoofLatched
                 if (scores.size < 4 || median < .75 || spoofLatched) { result["livenessPassed"] = false; return result }
                 result["livenessPassed"] = true
             }
             val current = embedding(align(bitmap, face)); require(template.size == current.size) { "templateIncompatible" }
             result["similarity"] = cosine(current, template)
-            if (!liveness) result["livenessPassed"] = null
+            if (!liveness) {
+                result["livenessPassed"] = null
+                result["livenessReady"] = false
+                result["livenessSampleCount"] = 0
+            }
             return result
         } finally { bitmap.recycle() }
     }
@@ -184,7 +217,8 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
     private fun embedding(image: Bitmap): FloatArray { try { val pix=IntArray(12544);image.getPixels(pix,0,112,0,0,112,112);val input=ByteBuffer.allocateDirect(12544*12).order(ByteOrder.nativeOrder());pix.forEach{input.putFloat((Color.blue(it)-127.5f)/128f);input.putFloat((Color.green(it)-127.5f)/128f);input.putFloat((Color.red(it)-127.5f)/128f)};input.rewind();val n=arc.getOutputTensor(0).shape().last();val out=arrayOf(FloatArray(n));arc.run(input,out);val norm=sqrt(out[0].sumOf{it*it.toDouble()});require(norm>0&&norm.isFinite()){ "internal"};return FloatArray(n){(out[0][it]/norm).toFloat()} } finally { image.recycle() } }
     private fun cosine(a:FloatArray,b:List<Double>):Double{var d=0.0;var x=0.0;var y=0.0;for(i in a.indices){d+=a[i]*b[i];x+=a[i]*a[i];y+=b[i]*b[i]};return d/sqrt(x*y)}
     private fun load(file:File):Interpreter = Interpreter(file, Interpreter.Options().setNumThreads(2))
-    fun reset(){scores.clear();lowRun=0;lowStarted=0;spoofLatched=false}
+    private fun clearWindow(){scores.clear();lowRun=0;lowStarted=0}
+    fun reset(){clearWindow();spoofLatched=false;trackingId=null}
     override fun close(){reset();detector.close();arc.close();fas27.close();fas40.close()}
     companion object { fun publicError(error:Throwable):String { val text=generateSequence(error){it.cause}.joinToString(" "){it.message.orEmpty()};return listOf("invalidImage","noFace","multipleFaces","faceTooSmall","faceNotFrontal","landmarksMissing","templateIncompatible","modelUnavailable").firstOrNull{text.contains(it)}?:"internal" } }
 }

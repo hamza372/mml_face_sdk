@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +89,7 @@ class _DemoHomeState extends State<DemoHome> {
   );
   static const demoActivationKey = String.fromEnvironment(
     'MML_DEMO_ACTIVATION_KEY',
+    defaultValue: 'MML-LIFETIME-E-3ldkClAxNigfEVD05w8nfyFwlfAATF',
   );
 
   final activationCode = TextEditingController();
@@ -721,7 +721,6 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
   double? similarity;
   double? liveness;
   double? distanceRatio;
-  int livenessSamples = 0;
   bool processingFrame = false;
 
   @override
@@ -732,7 +731,7 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
 
   Future<void> _initialize() async {
     try {
-      controller = await _createFrontCamera(ResolutionPreset.medium);
+      controller = await _createFrontCamera(ResolutionPreset.high);
       if (!mounted) return;
       setState(() {
         cameraReady = true;
@@ -842,12 +841,9 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
     } else if (result.spoofLatched) {
       setState(() {
         distanceRatio = null;
-        message = 'Spoof detected — present a live face';
+        message = 'Photo or screen detected — move out of frame';
         statusColor = const Color(0xffff5b6e);
-        livenessSamples = 0;
       });
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      await widget.sdk.resetLiveness();
     } else if (result.livenessPassed == true) {
       if (result.matched) {
         await _showSuccess(result);
@@ -857,9 +853,7 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
         distanceRatio = null;
         message = 'Live face confirmed, but not recognized';
         statusColor = const Color(0xffffb44b);
-        livenessSamples = 0;
       });
-      await widget.sdk.resetLiveness();
     } else if (result.livenessScore == null) {
       final guidance = _distanceGuidance(
         result.quality.faceRatio,
@@ -867,19 +861,20 @@ class _LiveVerificationPageState extends State<LiveVerificationPage> {
       );
       setState(() {
         distanceRatio = guidance == null ? null : result.quality.faceRatio;
-        message = guidance ?? 'Hold still — checking liveness';
-        statusColor = const Color(0xffffb44b);
+        message = guidance ?? 'Hold still — checking your presence…';
+        statusColor = const Color(0xff31e3c0);
       });
-    } else {
-      livenessSamples = math.min(4, livenessSamples + 1);
+    } else if (!result.livenessReady) {
       setState(() {
         distanceRatio = null;
-        message = livenessSamples < 4
-            ? 'Checking liveness · $livenessSamples of 4'
-            : 'Liveness not confirmed — keep a live face steady';
-        statusColor = livenessSamples < 4
-            ? const Color(0xff31e3c0)
-            : const Color(0xffffb44b);
+        message = 'Hold still — checking your presence…';
+        statusColor = const Color(0xff31e3c0);
+      });
+    } else {
+      setState(() {
+        distanceRatio = null;
+        message = 'Presence not confirmed — avoid photos and screens';
+        statusColor = const Color(0xffffb44b);
       });
     }
     return false;

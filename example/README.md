@@ -15,16 +15,21 @@ flutter run \
   --dart-define=MML_ACTIVATION_URL=ACTIVATION_URL
 ```
 
-## Building the public demo
+## Running or building the public demo
 
-The downloadable demo is built separately with a demo-only activation key that
-is restricted to this example application's package identifier:
+The example contains a demo-only activation key restricted to its Android
+package identifier, so it runs without asking the user for a key:
 
 ```sh
-flutter build apk --release \
-  --dart-define=MML_DEMO_ACTIVATION_KEY=DEMO_ONLY_KEY
+flutter run
 ```
 
-Never commit commercial or demo activation keys. For production integration,
-store the returned signed licence token in platform secure storage and follow
-the package's integration guide.
+The key can be replaced for an internal build when needed:
+
+```sh
+flutter run --dart-define=MML_DEMO_ACTIVATION_KEY=ANOTHER_DEMO_ONLY_KEY
+```
+
+Never put a commercial customer key in this example. For production
+integration, store the returned signed licence token in platform secure
+storage and follow the package's integration guide.

@@ -32,17 +32,17 @@ final class FaceEngine {
     guard let template else { throw FaceEngineError.templateIncompatible }
     let (image, face) = try detect(bytes); var output: [String: Any?] = quality(image, face)
     if liveness {
-      if face.boundingBox.width < 0.72 { scores=[];lowRun=0;lowStarted=0;output["livenessPassed"]=false;output["spoofLatched"]=spoofLatched;return output }
-      if spoofLatched { output["livenessPassed"] = false; output["spoofLatched"] = true; return output }
+      if face.boundingBox.width < 0.72 { scores=[];lowRun=0;lowStarted=0;output["livenessPassed"]=false;output["livenessReady"]=false;output["livenessSampleCount"]=0;output["spoofLatched"]=spoofLatched;return output }
+      if spoofLatched { output["livenessPassed"] = false; output["livenessReady"] = scores.count == 4; output["livenessSampleCount"] = scores.count; output["spoofLatched"] = true; return output }
       let score = (try fasScore(&fas27, image, face, 2.7) + fasScore(&fas40, image, face, 4.0)) / 2
       scores.append(score); if scores.count > 4 { scores.removeFirst() }
       let now = Date().timeIntervalSince1970
       if score < 0.40 { if lowRun == 0 { lowStarted = now }; lowRun += 1; if lowRun >= 3 && now - lowStarted >= 0.6 { spoofLatched = true } } else { lowRun = 0; lowStarted = 0 }
       let sorted = scores.sorted(); let median = sorted.count % 2 == 0 ? (sorted[sorted.count / 2 - 1] + sorted[sorted.count / 2]) / 2 : sorted[sorted.count / 2]
-      output["livenessScore"] = median; output["spoofLatched"] = spoofLatched
+      output["livenessScore"] = median; output["livenessReady"] = scores.count == 4; output["livenessSampleCount"] = scores.count; output["spoofLatched"] = spoofLatched
       guard scores.count == 4 && median >= 0.75 && !spoofLatched else { output["livenessPassed"] = false; return output }
       output["livenessPassed"] = true
-    } else { output["livenessPassed"] = nil }
+    } else { output["livenessPassed"] = nil; output["livenessReady"] = false; output["livenessSampleCount"] = 0 }
     let current = try embedding(align(image, face)); guard current.count == template.count else { throw FaceEngineError.templateIncompatible }
     output["similarity"] = zip(current, template).reduce(0) { $0 + $1.0 * $1.1 }
     return output

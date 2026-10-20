@@ -198,6 +198,8 @@ class MmlFaceSdk {
       similarity: similarity,
       livenessRequired: liveness,
       livenessPassed: raw['livenessPassed'] as bool?,
+      livenessReady: raw['livenessReady'] as bool? ?? false,
+      livenessSampleCount: (raw['livenessSampleCount'] as num?)?.toInt() ?? 0,
       livenessScore: (raw['livenessScore'] as num?)?.toDouble(),
       spoofLatched: raw['spoofLatched'] as bool? ?? false,
       quality: FaceQuality.fromNative(raw),

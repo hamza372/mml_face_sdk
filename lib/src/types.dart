@@ -88,6 +88,8 @@ class VerificationResult {
     required this.similarity,
     required this.livenessRequired,
     required this.livenessPassed,
+    this.livenessReady = false,
+    this.livenessSampleCount = 0,
     required this.livenessScore,
     required this.spoofLatched,
     required this.quality,
@@ -96,6 +98,8 @@ class VerificationResult {
   final double? similarity;
   final bool livenessRequired;
   final bool? livenessPassed;
+  final bool livenessReady;
+  final int livenessSampleCount;
   final double? livenessScore;
   final bool spoofLatched;
   final FaceQuality quality;

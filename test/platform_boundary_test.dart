@@ -31,6 +31,8 @@ class FakePlatform extends MmlFaceSdkPlatform with MockPlatformInterfaceMixin {
   }) async => {
     'similarity': .71,
     'livenessPassed': liveness ? true : null,
+    'livenessReady': liveness,
+    'livenessSampleCount': liveness ? 4 : 0,
     'faceRatio': .5,
     'yaw': 0,
     'roll': 0,
