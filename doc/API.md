@@ -2,6 +2,7 @@
 
 - `MmlFaceSdk(publicLicenseKey, matchThreshold: 0.75)`: stateful SDK client. The threshold is a compatibility default requiring calibration.
 - `activate(endpoint, activationCode)`: one online activation; validates the signed token, downloads the private encrypted model pack, verifies it, and installs it in app-private storage.
+- `verifySingleImage(encodedImage, template)`: experimental lower-assurance one-capture passive-liveness and 1:1 comparison. Calibrate this mode separately; use multi-frame `verify` for stronger decisions.
 - `initialize(license)`: verifies the trial or lifetime licence signature, expiry, app ID, installation binding, and presence of the installed model pack offline.
 - `createTemplate(encodedImage)`: quality-gates one face and returns an L2-normalized, model-versioned embedding.
 - `createTemplateFromFrame(nv21, width, height, rotationDegrees)`: Android real-time equivalent for a raw NV21 camera frame.

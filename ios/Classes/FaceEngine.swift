@@ -48,6 +48,22 @@ final class FaceEngine {
     return output
   }
 
+  func verifySingleImage(bytes: FlutterStandardTypedData?, template: [Double]?) throws -> [String: Any?] {
+    guard let template else { throw FaceEngineError.templateIncompatible }
+    let (image, face) = try detect(bytes); var output: [String: Any?] = quality(image, face)
+    if face.boundingBox.width < 0.72 {
+      output["livenessPassed"] = false; output["livenessReady"] = true
+      output["livenessSampleCount"] = 1; output["spoofLatched"] = false
+      return output
+    }
+    let score = (try fasScore(&fas27, image, face, 2.7) + fasScore(&fas40, image, face, 4.0)) / 2
+    let current = try embedding(align(image, face)); guard current.count == template.count else { throw FaceEngineError.templateIncompatible }
+    output["similarity"] = zip(current, template).reduce(0) { $0 + $1.0 * $1.1 }
+    output["livenessScore"] = score; output["livenessPassed"] = score >= 0.75
+    output["livenessReady"] = true; output["livenessSampleCount"] = 1; output["spoofLatched"] = false
+    return output
+  }
+
   private func detect(_ bytes: FlutterStandardTypedData?) throws -> (CGImage, VNFaceObservation) {
     guard let bytes, let ui = UIImage(data: bytes.data), let raw = normalized(ui).cgImage, let image = resize(raw, raw.width, raw.height) else { throw FaceEngineError.invalidImage }
     let request = VNDetectFaceLandmarksRequest(); try VNImageRequestHandler(cgImage: image).perform([request]); let faces = request.results ?? []

@@ -115,6 +115,25 @@ class MmlFaceSdk {
     required FaceTemplate template,
   }) => _compare(encodedImage, template, liveness: true);
 
+  /// Lower-assurance, single-capture passive-liveness and face comparison.
+  ///
+  /// Prefer [verify] with a short sequence of frames for security-sensitive
+  /// use cases. Single-image thresholds must be calibrated independently.
+  Future<VerificationResult> verifySingleImage({
+    required Uint8List encodedImage,
+    required FaceTemplate template,
+  }) async {
+    _requireLicense();
+    _validateTemplate(template);
+    final raw = await _native(
+      () => MmlFaceSdkPlatform.instance.verifySingleImage(
+        encodedImage,
+        template.embedding,
+      ),
+    );
+    return _result(raw, liveness: true);
+  }
+
   Future<VerificationResult> recognizeFrame({
     required Uint8List nv21,
     required int width,
@@ -144,6 +163,28 @@ class MmlFaceSdk {
     template,
     liveness: true,
   );
+
+  /// Lower-assurance single-frame variant of [verifySingleImage].
+  Future<VerificationResult> verifySingleImageFrame({
+    required Uint8List nv21,
+    required int width,
+    required int height,
+    required int rotationDegrees,
+    required FaceTemplate template,
+  }) async {
+    _requireLicense();
+    _validateTemplate(template);
+    final raw = await _native(
+      () => MmlFaceSdkPlatform.instance.verifySingleImageFrame(
+        nv21,
+        width,
+        height,
+        rotationDegrees,
+        template.embedding,
+      ),
+    );
+    return _result(raw, liveness: true);
+  }
 
   Future<VerificationResult> _compare(
     Uint8List image,

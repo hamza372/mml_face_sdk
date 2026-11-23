@@ -35,6 +35,7 @@ public final class MmlFaceSdkPlugin: NSObject, FlutterPlugin {
           try modelStore.install(version: version, models: models); value = nil
         case "createTemplate": value = try self.faceEngine().createTemplate(bytes: args?["image"] as? FlutterStandardTypedData)
         case "verify": value = try self.faceEngine().verify(bytes: args?["image"] as? FlutterStandardTypedData, template: args?["template"] as? [Double], liveness: args?["liveness"] as? Bool ?? true)
+        case "verifySingleImage": value = try self.faceEngine().verifySingleImage(bytes: args?["image"] as? FlutterStandardTypedData, template: args?["template"] as? [Double])
         case "resetLiveness": self.engine?.reset(); value = nil
         case "dispose": self.engine?.close(); self.engine = nil; value = nil
         default: DispatchQueue.main.async { result(FlutterMethodNotImplemented) }; return

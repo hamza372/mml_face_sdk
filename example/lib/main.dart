@@ -225,6 +225,17 @@ class _DemoHomeState extends State<DemoHome> {
     );
   }
 
+  Future<void> _openSingleImageVerification() async {
+    final enrolled = profile;
+    if (!ready || enrolled == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            SingleImageVerificationPage(sdk: sdk!, profile: enrolled),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final enrolled = profile;
@@ -426,10 +437,19 @@ class _DemoHomeState extends State<DemoHome> {
                       _ActionTile(
                         icon: Icons.shield_outlined,
                         title: 'Liveness + recognition',
-                        subtitle: 'Check for a live face before matching',
+                        subtitle: 'Recommended four-frame verification',
                         color: const Color(0xff11a985),
                         enabled: ready && enrolled != null,
                         onTap: () => _openVerification(true),
+                      ),
+                      const SizedBox(height: 12),
+                      _ActionTile(
+                        icon: Icons.photo_camera_outlined,
+                        title: 'Single-image test',
+                        subtitle: 'Experimental lower-assurance comparison',
+                        color: const Color(0xff8b5cf6),
+                        enabled: ready && enrolled != null,
+                        onTap: _openSingleImageVerification,
                       ),
                     ],
                   ),
@@ -694,6 +714,297 @@ class _EnrollmentCameraPageState extends State<EnrollmentCameraPage> {
     controller?.dispose();
     super.dispose();
   }
+}
+
+class SingleImageVerificationPage extends StatefulWidget {
+  const SingleImageVerificationPage({
+    super.key,
+    required this.sdk,
+    required this.profile,
+  });
+
+  final MmlFaceSdk sdk;
+  final EnrolledProfile profile;
+
+  @override
+  State<SingleImageVerificationPage> createState() =>
+      _SingleImageVerificationPageState();
+}
+
+class _SingleImageVerificationPageState
+    extends State<SingleImageVerificationPage> {
+  CameraController? controller;
+  CameraImage? latestFrame;
+  bool cameraReady = false;
+  bool processing = false;
+  String message = 'Capture one image to test liveness and recognition';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      controller = await _createFrontCamera(ResolutionPreset.high);
+      if (Platform.isAndroid) {
+        await controller!.startImageStream((frame) {
+          latestFrame = frame;
+          if (mounted && !cameraReady) setState(() => cameraReady = true);
+        });
+      } else if (mounted) {
+        setState(() => cameraReady = true);
+      }
+    } catch (_) {
+      if (mounted) setState(() => message = 'Camera permission is required');
+    }
+  }
+
+  Future<void> _capture() async {
+    final camera = controller;
+    if (!cameraReady || processing || camera == null) return;
+    setState(() {
+      processing = true;
+      message = 'Evaluating this single image…';
+    });
+    try {
+      final VerificationResult result;
+      if (Platform.isAndroid) {
+        final frame = latestFrame;
+        if (frame == null) throw StateError('Camera frame unavailable');
+        result = await widget.sdk.verifySingleImageFrame(
+          nv21: _mergeNv21(frame),
+          width: frame.width,
+          height: frame.height,
+          rotationDegrees: _rotationDegrees(camera),
+          template: widget.profile.template,
+        );
+      } else {
+        final photo = await camera.takePicture();
+        result = await widget.sdk.verifySingleImage(
+          encodedImage: await photo.readAsBytes(),
+          template: widget.profile.template,
+        );
+      }
+      if (!mounted) return;
+      if (result.livenessScore == null) {
+        final guidance = _distanceGuidance(
+          result.quality.faceRatio,
+          requiredRatio: .72,
+        );
+        setState(() {
+          processing = false;
+          message = guidance ?? 'Could not evaluate this image — try again';
+        });
+        return;
+      }
+      await _showResult(result);
+      if (mounted) {
+        setState(() {
+          processing = false;
+          message = 'Capture another image to compare the result';
+        });
+      }
+    } on FaceSdkException catch (error) {
+      if (mounted) {
+        setState(() {
+          processing = false;
+          message = _friendlyError(error.code);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          processing = false;
+          message = 'Could not process this image — try again';
+        });
+      }
+    }
+  }
+
+  Future<void> _showResult(VerificationResult result) {
+    final live = result.livenessPassed == true;
+    final recognized =
+        result.similarity != null &&
+        result.similarity! >= widget.sdk.matchThreshold;
+    final passed = live && recognized;
+    final color = passed ? const Color(0xff0aaf82) : const Color(0xffe1495b);
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          passed ? Icons.verified_rounded : Icons.cancel_outlined,
+          color: color,
+          size: 48,
+        ),
+        title: Text(passed ? 'Verification passed' : 'Verification not passed'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Result from exactly one captured camera image.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 18),
+            _SingleImageResultRow(
+              label: 'Passive liveness',
+              value: live ? 'PASS' : 'FAIL',
+              score: result.livenessScore,
+              passed: live,
+            ),
+            const SizedBox(height: 10),
+            _SingleImageResultRow(
+              label: 'Face recognition',
+              value: recognized ? 'MATCH' : 'NO MATCH',
+              score: result.similarity,
+              passed: recognized,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Single-image liveness provides lower assurance than the recommended four-frame mode.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Color(0xff637487)),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Test another image'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => _CameraShell(
+    title: 'Single-image test',
+    controller: controller,
+    ready: cameraReady,
+    guideColor: processing ? Colors.amber : const Color(0xffa78bfa),
+    showGuide: false,
+    footer: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0x338b5cf6),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: const Text(
+            'EXPERIMENTAL · ONE IMAGE',
+            style: TextStyle(
+              color: Color(0xffc4b5fd),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .7,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 18),
+        GestureDetector(
+          onTap: processing ? null : _capture,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 76,
+            height: 76,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              color: processing ? Colors.white24 : Colors.transparent,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: processing ? Colors.amber : const Color(0xff8b5cf6),
+              ),
+              child: processing
+                  ? const Padding(
+                      padding: EdgeInsets.all(18),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+}
+
+class _SingleImageResultRow extends StatelessWidget {
+  const _SingleImageResultRow({
+    required this.label,
+    required this.value,
+    required this.score,
+    required this.passed,
+  });
+
+  final String label;
+  final String value;
+  final double? score;
+  final bool passed;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0xfff4f7fa),
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          passed ? Icons.check_circle : Icons.cancel,
+          color: passed ? const Color(0xff0aaf82) : const Color(0xffe1495b),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+                score?.toStringAsFixed(3) ?? 'No score',
+                style: const TextStyle(fontSize: 12, color: Color(0xff637487)),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: passed ? const Color(0xff0aaf82) : const Color(0xffe1495b),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class LiveVerificationPage extends StatefulWidget {

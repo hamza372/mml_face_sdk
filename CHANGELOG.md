@@ -1,3 +1,9 @@
+## 0.1.1-dev.10
+
+* Added an experimental lower-assurance single-image passive-liveness and face-comparison API.
+* Added a separate single-image test to the Android demo with independent liveness and recognition scores.
+* Retained the recommended four-frame verification mode for security-sensitive workflows.
+
 ## 0.1.1-dev.9
 
 * Aligned the Android live verification session with the production app's tracked-face liveness flow.

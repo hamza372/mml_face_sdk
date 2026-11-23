@@ -64,6 +64,39 @@ internal class FaceEngine(models: Map<String, File>) : AutoCloseable {
         return verifyBitmap(bitmap, face, template, liveness)
     }
 
+    fun verifySingleImage(bytes: ByteArray, template: List<Double>): Map<String, Any?> {
+        val (bitmap, face) = validatedFace(bytes)
+        return verifySingleImageBitmap(bitmap, face, template)
+    }
+
+    fun verifySingleImageFrame(nv21: ByteArray, width: Int, height: Int, rotationDegrees: Int, template: List<Double>): Map<String, Any?> {
+        val (bitmap, face) = validatedFrame(nv21, width, height, rotationDegrees)
+        return verifySingleImageBitmap(bitmap, face, template)
+    }
+
+    private fun verifySingleImageBitmap(bitmap: Bitmap, face: Face, template: List<Double>): Map<String, Any?> {
+        try {
+            val result = quality(bitmap, face).toMutableMap<String, Any?>()
+            if ((result["faceRatio"] as Double) < .72) {
+                result["livenessPassed"] = false
+                result["livenessReady"] = true
+                result["livenessSampleCount"] = 1
+                result["spoofLatched"] = false
+                return result
+            }
+            val score = (fasScore(fas27, bitmap, face, 2.7) + fasScore(fas40, bitmap, face, 4.0)) / 2.0
+            val current = embedding(align(bitmap, face))
+            require(template.size == current.size) { "templateIncompatible" }
+            result["similarity"] = cosine(current, template)
+            result["livenessScore"] = score
+            result["livenessPassed"] = score >= .75
+            result["livenessReady"] = true
+            result["livenessSampleCount"] = 1
+            result["spoofLatched"] = false
+            return result
+        } finally { bitmap.recycle() }
+    }
+
     private fun verifyBitmap(bitmap: Bitmap, face: Face, template: List<Double>, liveness: Boolean): Map<String, Any?> {
         try {
             val result = quality(bitmap, face).toMutableMap<String, Any?>()

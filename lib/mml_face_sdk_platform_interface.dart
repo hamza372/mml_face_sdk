@@ -27,6 +27,10 @@ abstract class MmlFaceSdkPlatform extends PlatformInterface {
     List<double> template, {
     required bool liveness,
   }) => throw UnimplementedError();
+  Future<Map<Object?, Object?>> verifySingleImage(
+    Uint8List image,
+    List<double> template,
+  ) => throw UnimplementedError();
   Future<Map<Object?, Object?>> verifyFrame(
     Uint8List nv21,
     int width,
@@ -35,6 +39,13 @@ abstract class MmlFaceSdkPlatform extends PlatformInterface {
     List<double> template, {
     required bool liveness,
   }) => throw UnimplementedError();
+  Future<Map<Object?, Object?>> verifySingleImageFrame(
+    Uint8List nv21,
+    int width,
+    int height,
+    int rotationDegrees,
+    List<double> template,
+  ) => throw UnimplementedError();
   Future<Map<Object?, Object?>> getDeviceBinding() =>
       throw UnimplementedError();
   Future<bool> hasModelPack(String version) => throw UnimplementedError();

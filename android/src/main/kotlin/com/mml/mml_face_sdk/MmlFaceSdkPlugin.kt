@@ -48,6 +48,10 @@ class MmlFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         call.argument<Int>("rotationDegrees") ?: error("invalidImage"),
                     )
                     "verify" -> faceEngine().verify(call.argument<ByteArray>("image") ?: error("invalidImage"), call.argument<List<Double>>("template") ?: error("templateIncompatible"), call.argument<Boolean>("liveness") ?: true)
+                    "verifySingleImage" -> faceEngine().verifySingleImage(
+                        call.argument<ByteArray>("image") ?: error("invalidImage"),
+                        call.argument<List<Double>>("template") ?: error("templateIncompatible"),
+                    )
                     "verifyFrame" -> faceEngine().verifyFrame(
                         call.argument<ByteArray>("nv21") ?: error("invalidImage"),
                         call.argument<Int>("width") ?: error("invalidImage"),
@@ -55,6 +59,13 @@ class MmlFaceSdkPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         call.argument<Int>("rotationDegrees") ?: error("invalidImage"),
                         call.argument<List<Double>>("template") ?: error("templateIncompatible"),
                         call.argument<Boolean>("liveness") ?: true,
+                    )
+                    "verifySingleImageFrame" -> faceEngine().verifySingleImageFrame(
+                        call.argument<ByteArray>("nv21") ?: error("invalidImage"),
+                        call.argument<Int>("width") ?: error("invalidImage"),
+                        call.argument<Int>("height") ?: error("invalidImage"),
+                        call.argument<Int>("rotationDegrees") ?: error("invalidImage"),
+                        call.argument<List<Double>>("template") ?: error("templateIncompatible"),
                     )
                     "resetLiveness" -> { engine?.reset(); null }
                     "dispose" -> { engine?.close(); engine = null; null }

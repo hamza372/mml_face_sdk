@@ -4,6 +4,10 @@ This app demonstrates activation, model installation, local enrollment,
 one-to-one face matching, and passive liveness. Biometric processing stays on
 the device.
 
+It includes both the recommended four-frame verification flow and an
+experimental single-image test that reports passive-liveness and recognition
+scores from exactly one captured frame.
+
 ## Customer evaluation
 
 Run without a bundled activation key and enter the seven-day trial key supplied

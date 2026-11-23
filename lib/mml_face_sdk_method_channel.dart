@@ -41,6 +41,15 @@ class MethodChannelMmlFaceSdk extends MmlFaceSdkPlatform {
   }))!;
 
   @override
+  Future<Map<Object?, Object?>> verifySingleImage(
+    Uint8List image,
+    List<double> template,
+  ) async => (await methodChannel.invokeMapMethod<Object?, Object?>(
+    'verifySingleImage',
+    {'image': image, 'template': template},
+  ))!;
+
+  @override
   Future<Map<Object?, Object?>> verifyFrame(
     Uint8List nv21,
     int width,
@@ -56,6 +65,22 @@ class MethodChannelMmlFaceSdk extends MmlFaceSdkPlatform {
         'rotationDegrees': rotationDegrees,
         'template': template,
         'liveness': liveness,
+      }))!;
+
+  @override
+  Future<Map<Object?, Object?>> verifySingleImageFrame(
+    Uint8List nv21,
+    int width,
+    int height,
+    int rotationDegrees,
+    List<double> template,
+  ) async => (await methodChannel
+      .invokeMapMethod<Object?, Object?>('verifySingleImageFrame', {
+        'nv21': nv21,
+        'width': width,
+        'height': height,
+        'rotationDegrees': rotationDegrees,
+        'template': template,
       }))!;
 
   @override
