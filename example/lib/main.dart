@@ -145,7 +145,7 @@ class _DemoHomeState extends State<DemoHome> {
       setState(() {
         ready = false;
         busy = false;
-        status = 'Activation required';
+        status = 'Initial setup failed — check internet and retry';
       });
     }
   }
